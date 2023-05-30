@@ -1,0 +1,16 @@
+yarn add v1.22.17
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+[4/4] Building fresh packages...
+success Saved lockfile.
+success Saved 3 new dependencies.
+info Direct dependencies
+├─ @types/nanoid@3.0.0
+├─ @types/pino@7.0.5
+└─ openapi-types@10.0.0
+info All dependencies
+├─ @types/nanoid@3.0.0
+├─ @types/pino@7.0.5
+└─ openapi-types@10.0.0
+Done in 4.87s.
