@@ -51,7 +51,8 @@ export default class MentorController extends BaseController {
         this.router.put(`${this.path}/resetPassword`, this.resetPassword.bind(this));
         this.router.put(`${this.path}/manualResetPassword`, this.manualResetPassword.bind(this));
         this.router.get(`${this.path}/regStatus`, this.getMentorRegStatus.bind(this));
-        this.router.post(`${this.path}/bulkUpload`, this.bulkUpload.bind(this))
+        this.router.post(`${this.path}/bulkUpload`, this.bulkUpload.bind(this));
+        this.router.post(`${this.path}/mobileOtp`,this.mobileOpt.bind(this))
 
         super.initializeRoutes();
     }
@@ -564,6 +565,22 @@ export default class MentorController extends BaseController {
                 return res.status(404).send(dispatcher(res, resultmentorDelete.error, 'error', resultmentorDelete.error));
             } else {
                 return res.status(202).send(dispatcher(res, resultmentorDelete.dataValues, 'success', speeches.USER_DELETED, 202));
+            }
+        } catch (error) {
+            next(error)
+        }
+    }
+    private async mobileOpt(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const { mobile } = req.body;
+            if (!mobile) {
+                throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
+            }
+            const result = await this.authService.mobileotp(req.body);
+            if (result.error) {
+                return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
+            } else {
+                return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.OTP_SEND, 202));
             }
         } catch (error) {
             next(error)

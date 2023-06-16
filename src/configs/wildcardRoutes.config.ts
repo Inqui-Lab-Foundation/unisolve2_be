@@ -17,6 +17,7 @@ export const wildcardRoutes = [
     "/api/v1/students/updatePassword",
     "/api/v1/mentors/updatePassword",
     "/api/v1/mentors/updateMobile",
+    "/api/v1/mentors/mobileOtp",
     "/api/v1/mentors/verifyUser",
     "/api/v1/evaluators/updatePassword",
     "/api/v1/admins/updatePassword",

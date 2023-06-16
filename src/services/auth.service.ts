@@ -501,6 +501,21 @@ export default class authService {
             return result;
         }
     }
+    async mobileotp(requestBody: any) {
+        let result: any = {};
+        try {
+            // const result = await this.triggerOtpMsg(requestBody.mobile);
+            // if (result instanceof Error) {
+            //     throw result;
+            // }
+            const otp: any = Math.random().toFixed(6).substr(-6);
+            result.data = otp
+            return result;
+        } catch (error) {
+            result['error'] = error;
+            return result;
+        }
+    }
     /**
      * Get the mentor details with the mobile number, trigger OTP and update the password
      * @param requestBody 
