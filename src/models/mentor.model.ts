@@ -28,6 +28,9 @@ export class mentor extends Model<InferAttributes<mentor>, InferCreationAttribut
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
+    declare title: string;
+    declare gender: string;
+    declare whatapp_mobile: string;
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -118,6 +121,18 @@ mentor.init(
             allowNull: true,
             defaultValue: DataTypes.NOW,
             onUpdate: new Date().toLocaleString()
+        },
+        title: {
+            type:DataTypes.STRING,
+            allowNull: false
+        },
+        gender:{
+            type:DataTypes.STRING,
+            allowNull: false
+        },
+        whatapp_mobile:{
+            type:DataTypes.STRING,
+            allowNull: false
         }
     },
     {
