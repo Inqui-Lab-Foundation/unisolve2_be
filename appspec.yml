@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/ubuntu/mv-unisolve-be
+    destination: /home/ubuntu/unisolve2_be
 file_exists_behavior: OVERWRITE
 hooks:
   BeforeInstall:
