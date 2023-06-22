@@ -39,6 +39,7 @@ import ChallengeResponsesController from "./controllers/challenge_response.contr
 import EvaluatorRatingController from "./controllers/evaluator_rating.controller";
 import InstructionController from "./controllers/instructions.controller";
 import EvaluationProcess from "./controllers/evaluation_process.controller";
+import ResourceController from "./controllers/resource.controller";
 
 // validating env variables
 validateEnv();
@@ -84,6 +85,7 @@ try {
         new EvaluatorRatingController,
         new InstructionController,
         new EvaluationProcess,
+        new ResourceController
     ], Number(process.env.APP_PORT));
     // starting app
     app.listen();
