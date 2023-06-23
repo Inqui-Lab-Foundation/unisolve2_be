@@ -354,8 +354,15 @@ export default class authService {
      */
     async triggerOtpMsg(mobile: any) {
         try {
-            const otp = await axios.get(`https://youthforsocialimpact.in/student/unisolveOTP/${mobile}`)
-            return otp.data.otp;
+            let otp
+            if(process.env.MOBILE_SMS_URl != ""){
+                otp = await axios.get(`${process.env.MOBILE_SMS_URl}${mobile}`)
+                return otp.data.otp;
+            }
+            else{
+                otp = Math.random().toFixed(6).substr(-6); 
+                return otp;
+            }
         } catch (error: any) {
             return error
         }
@@ -504,11 +511,10 @@ export default class authService {
     async mobileotp(requestBody: any) {
         let result: any = {};
         try {
-            // const result = await this.triggerOtpMsg(requestBody.mobile);
-            // if (result instanceof Error) {
-            //     throw result;
-            // }
-            const otp: any = Math.random().toFixed(6).substr(-6);
+            const otp = await this.triggerOtpMsg(requestBody.mobile);
+            if (otp instanceof Error) {
+                throw otp;
+            }
             result.data = otp
             return result;
         } catch (error) {
@@ -534,7 +540,7 @@ export default class authService {
                 });
             } else {
                 mentor_res = await this.crudService.findOne(user, {
-                    where: { username: requestBody.email }
+                    where: { username: requestBody.mobile }
                 });
             }
             if (!mentor_res) {
@@ -548,7 +554,7 @@ export default class authService {
                 passwordNeedToBeUpdated['otp'] = requestBody.organization_code;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
-                passwordNeedToBeUpdated = await this.triggerEmail(requestBody.email);
+                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.email);
                 if (passwordNeedToBeUpdated instanceof Error) {
                     throw passwordNeedToBeUpdated;
                 }
