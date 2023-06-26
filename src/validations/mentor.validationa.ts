@@ -54,4 +54,7 @@ export const mentorUpdateSchema = Joi.object().keys({
     full_name: Joi.string().trim().min(1).regex(constents.ALPHA_NUMERIC_PATTERN).required().messages({
         'string.empty': speeches.USER_FULLNAME_REQUIRED
     }),
+    title: Joi.string(),
+    gender: Joi.string(),
+    whatapp_mobile: Joi.string().max(10)
 });
