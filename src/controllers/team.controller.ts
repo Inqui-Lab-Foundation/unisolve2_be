@@ -244,7 +244,7 @@ export default class TeamController extends BaseController {
         });
         // console.log(student_res[0].dataValues.UUID)
         // student_res.dataValues['password'] = "";
-        return res.status(200).send(dispatcher(res, student_res, 'success'));
+        return res.status(200).send(dispatcher(res,student_res, 'success'));
     };
     /**
      * 

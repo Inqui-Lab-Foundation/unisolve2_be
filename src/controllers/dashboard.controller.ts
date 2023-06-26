@@ -21,6 +21,7 @@ import { team } from '../models/team.model';
 import { challenge_response } from '../models/challenge_response.model';
 import StudentService from '../services/students.service';
 import { user } from '../models/user.model';
+import { object } from 'joi';
 
 
 export default class DashboardController extends BaseController {
@@ -44,7 +45,7 @@ export default class DashboardController extends BaseController {
 
         //mentor stats...
         this.router.get(`${this.path}/mentorStats/:mentor_user_id`, this.getMentorStats.bind(this))
-        // this.router.get(`${this.path}/mentorStats/:mentor_id/progessOverall`, this.getMentorStatsProgressOverall.bind(this))
+        //this.router.get(`${this.path}/mentorStats/:mentor_id/progessOverall`, this.getMentorStatsProgressOverall.bind(this))
 
         //student Stats...
         this.router.get(`${this.path}/studentStats/:student_user_id`, this.getStudentStats.bind(this))
@@ -123,6 +124,14 @@ export default class DashboardController extends BaseController {
                         and t.status='ACTIVE'
                         )`),
                         "teams_count"
+                    ],
+                    [
+                        db.literal(`(
+                            SELECT count(*) FROM mentor_topic_progress where user_id = ${mentor_user_id})`),"course_completed_count"
+                    ],
+                    [
+                        db.literal(`(
+                            SELECT count(*) FROM quiz_responses where user_id = ${mentor_user_id})`),"Quiz_completed_count"
                     ]
                 ],
                 include: {
@@ -146,7 +155,7 @@ export default class DashboardController extends BaseController {
             next(err)
         }
     }
-
+   
     private async getMentorStatsProgressOverall(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const options = {
@@ -169,13 +178,13 @@ export default class DashboardController extends BaseController {
                 throw file;
             }
 
-            // if(!file){
-            //     file=JSON.parse(file)
-            //     console.log("file",file)
-            //     if(!file.teacher || typeof file.teacher !='object'){
-            //         throw internal(speeches.ROADMAP_FILE_CORRUPTED)
-            //     }
-            // }
+            /*if(!file){
+            file=JSON.parse(file)
+                console.log("file",file)
+               if(!file.teacher || typeof file.teacher !='object'){
+                   throw internal(speeches.ROADMAP_FILE_CORRUPTED)
+               }
+            }*/
             console.log(file.teacher);
             const teacherStepsTotal = Object.keys(file.teacher);
             const totalNoOfSteps = teacherStepsTotal.length;
