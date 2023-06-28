@@ -7,3 +7,4 @@ export PM2_HOME=/home/ubuntu/.pm2
 cd /home/ubuntu/unisolve2_be
 pm2 stop all
 pm2 delete all
+pm2 save -f
