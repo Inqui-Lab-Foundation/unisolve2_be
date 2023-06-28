@@ -7,6 +7,7 @@ export class organization extends Model<InferAttributes<organization>, InferCrea
     declare organization_id: CreationOptional<number>;
     declare organization_name: string;
     declare organization_code: string;
+    declare password: string;
     declare city: string;
     declare district: string;
     declare state: string;
@@ -19,6 +20,8 @@ export class organization extends Model<InferAttributes<organization>, InferCrea
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
+    declare is_loggedin: Enumerator;
+    declare last_login : Date;
 }
 
 organization.init({
@@ -35,6 +38,10 @@ organization.init({
         type: DataTypes.STRING,
         allowNull: false
     },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
     city: {
         type: DataTypes.STRING
     },
@@ -43,6 +50,13 @@ organization.init({
     },
     state: {
         type: DataTypes.STRING
+    },
+    is_loggedin: {
+        type: DataTypes.ENUM(...Object.values(constents.common_yes_no_flags.list)),
+        defaultValue: constents.common_yes_no_flags.default
+    },
+    last_login: {
+        type: DataTypes.DATE
     },
     country: {
         type: DataTypes.STRING

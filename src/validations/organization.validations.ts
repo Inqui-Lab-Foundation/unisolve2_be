@@ -24,6 +24,7 @@ export const organizationRawSchema = Joi.object().keys({
     district: Joi.string().messages({
         'string.empty': speeches.DISTRICT_REQ
     }),
+    password: Joi.string(),
     principal_name: Joi.any(),
     principal_mobile: Joi.any(),
     principal_email: Joi.any(),

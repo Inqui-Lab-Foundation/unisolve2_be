@@ -15,6 +15,8 @@ import validationMiddleware from "../middlewares/validation.middleware";
 import { Op } from "sequelize";
 import { constant } from "lodash";
 import { constents } from "../configs/constents.config";
+import bcrypt from 'bcrypt';
+import { baseConfig } from '../configs/base.config';
 
 export default class OrganizationController extends BaseController {
 
@@ -32,8 +34,52 @@ export default class OrganizationController extends BaseController {
         this.router.get(`${this.path}/districts`, this.getGroupByDistrict.bind(this));
         this.router.post(`${this.path}/checkOrg`, validationMiddleware(organizationCheckSchema), this.checkOrgDetails.bind(this));
         this.router.post(`${this.path}/createOrg`, validationMiddleware(organizationRawSchema), this.createOrg.bind(this));
+        this.router.post(`${this.path}/login`,this.login.bind(this));
+        this.router.get(`${this.path}/logout`,this.logout.bind(this));
+        this.router.put(`${this.path}/changePassword`, this.changePassword.bind(this));
         super.initializeRoutes();
     };
+
+    private async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const result = await this.authService.orglogin(req.body);
+            if (!result) {
+                return res.status(404).send(dispatcher(res, result, 'error', speeches.USER_NOT_FOUND));
+            }
+            else if (result.error){
+                return res.status(403).send(dispatcher(res,result,'error'));
+            }
+            else {
+                return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
+            }
+        } catch (error) {
+            return res.status(401).send(dispatcher(res, error, 'error', speeches.USER_RISTRICTED, 401));
+        }
+    }
+
+    private async logout(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        const result = await this.authService.orglogout(req.body, res);
+        if (result.error) {
+            next(result.error);
+        } else {
+            return res.status(200).send(dispatcher(res, speeches.LOGOUT_SUCCESS, 'success'));
+        }
+    }
+
+    private async changePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        const result = await this.authService.orgchangePassword(req.body, res);
+        if (!result) {
+            return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_NOT_FOUND));
+        } else if (result.error) {
+            return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
+        }
+        else if (result.match) {
+            return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_PASSWORD));
+        } else {
+            return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
+        }
+    }
+
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             let data: any;
@@ -163,6 +209,10 @@ export default class OrganizationController extends BaseController {
     }
     private async createOrg(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         // console.log(req.body);
+        const orgCode = req.body.organization_code;
+        const leve1CryptoEncryptedString = await this.authService.generateCryptEncryption(orgCode);
+        const pass = await bcrypt.hashSync(leve1CryptoEncryptedString, process.env.SALT || baseConfig.SALT);
+        req.body['password'] = pass;
         return this.createData(req, res, next);
     }
 }
