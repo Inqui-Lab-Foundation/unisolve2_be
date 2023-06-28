@@ -124,11 +124,15 @@ export default class StudentController extends BaseController {
                             attributes: [
                                 'organization_code',
                                 'full_name',
+                                'gender',
+                                'mobile',
                             ],
                             include: {
                                 model: organization,
                                 attributes: [
                                     "organization_name",
+                                    "principal_name",
+                                    "principal_mobile",
                                     "city",
                                     "district",
                                     "state",
