@@ -3,7 +3,9 @@ import ValidationsHolder from "../validations/validationHolder";
 import BaseController from "./base.controller";
 import { NextFunction, Request, Response } from "express";
 import { badRequest, internal, notFound, unauthorized } from "boom";
-import { S3 } from "aws-sdk";
+  import {PutObjectCommand,
+  S3Client
+} from "@aws-sdk/client-s3";
 import { speeches } from "../configs/speeches.config";
 import path from "path";
 import fs from 'fs';
@@ -184,11 +186,13 @@ export default class WorksheetController extends BaseController {
             if(!curr_workshet_topic || curr_workshet_topic instanceof Error){
                 throw badRequest("INVALID TOPIC");
             }
-            let s3 = new S3({
+            let s3 = new S3Client({
                 apiVersion: '2006-03-01',
                 region: process.env.AWS_REGION,
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+                credentials:{
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ""
+                }
             });
             //copy attached file in assets/worksheets/responses and add its path in attachment variable
             const rawfiles: any = req.files;
@@ -220,7 +224,7 @@ export default class WorksheetController extends BaseController {
                     Body: readFile
                 };
                 let options: any = { partSize: 20 * 1024 * 1024, queueSize: 2 };
-                await s3.upload(params).promise()
+                await s3.send(new PutObjectCommand(params))
                     .then((data: any) => { attachments.push(data.Location) })
                     .catch((err: any) => { errs.push(`Error uploading file: ${file.originalFilename}, err: ${err.message}`) })
                 result['attachments'] = attachments;

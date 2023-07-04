@@ -23,10 +23,10 @@
     "scaffold:entity": "node -e 'require(\"./src/scaffolders/generate.js\").g()'"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.363.0",
     "@supercharge/request-ip": "^1.2.0",
     "@types/cron": "^2.0.0",
     "amqplib": "^0.10.0",
-    "aws-sdk": "^2.1231.0",
     "axios": "^0.27.2",
     "bcrypt": "^5.0.1",
     "boom": "^7.3.0",

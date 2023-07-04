@@ -6,7 +6,9 @@ import { notFound } from "boom";
 import dispatcher from "../utils/dispatch.util";
 import ValidationsHolder from "../validations/validationHolder";
 import {resourceSchema, resourceUpdateSchema} from '../validations/resource.validations';
-import { S3 } from "aws-sdk";
+import   {PutObjectCommand,
+  S3Client
+} from "@aws-sdk/client-s3";
 import fs from 'fs';
 
 export default class ResourceController extends BaseController {
@@ -55,11 +57,12 @@ export default class ResourceController extends BaseController {
             const errs: any = [];
             let attachments: any = [];
             let result: any = {};
-            let s3 = new S3({
+            let s3 = new S3Client({
                 apiVersion: '2006-03-01',
                 region: process.env.AWS_REGION,
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+                credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "" }
             });
             if (!req.files) {
                 return result;
@@ -83,7 +86,7 @@ export default class ResourceController extends BaseController {
                     Body: readFile
                 };
                 let options: any = { partSize: 20 * 1024 * 1024, queueSize: 2 };
-                await s3.upload(params, options).promise()
+                await s3.send(new PutObjectCommand(params), options)
                     .then((data: any) => { attachments.push(data.Location) })
                     .catch((err: any) => { errs.push(`Error uploading file: ${file.originalFilename}, err: ${err.message}`) })
                 result['attachments'] = attachments;

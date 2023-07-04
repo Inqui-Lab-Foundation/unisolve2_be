@@ -18,8 +18,11 @@ import { student } from "../models/student.model";
 import { forbidden } from "joi";
 import path from "path";
 import fs from 'fs';
-import { S3 } from "aws-sdk";
-import { ManagedUpload } from "aws-sdk/clients/s3";
+import {
+  PutObjectCommand,
+  PutObjectCommandInput,
+  S3Client
+} from "@aws-sdk/client-s3";
 import { challengeResponsesSchema, challengeResponsesUpdateSchema, initiateIdeaSchema, UpdateAnyFieldSchema } from "../validations/challenge_responses.validations";
 import StudentService from "../services/students.service";
 import { team } from "../models/team.model";
@@ -890,11 +893,13 @@ export default class ChallengeResponsesController extends BaseController {
             const errs: any = [];
             let attachments: any = [];
             let result: any = {};
-            let s3 = new S3({
+            let s3 = new S3Client({
                 apiVersion: '2006-03-01',
                 region: process.env.AWS_REGION,
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+                credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ""
+                }
             });
             if (!req.files) {
                 return result;
@@ -912,13 +917,13 @@ export default class ChallengeResponsesController extends BaseController {
                     errs.push(`Error uploading file: ${file.originalFilename} err: ${readFile}`)
                 }
                 file.originalFilename = `${file_name_prefix}/${file.originalFilename}`;
-                let params = {
+                let params: PutObjectCommandInput = {
                     Bucket: 'unisole-assets',
                     Key: file.originalFilename,
                     Body: readFile
                 };
                 let options: any = { partSize: 20 * 1024 * 1024, queueSize: 2 };
-                await s3.upload(params, options).promise()
+                await s3.send(new PutObjectCommand(params), options)
                     .then((data: any) => { attachments.push(data.Location) })
                     .catch((err: any) => { errs.push(`Error uploading file: ${file.originalFilename}, err: ${err.message}`) })
                 result['attachments'] = attachments;
