@@ -23,7 +23,10 @@ import { user_topic_progress } from "../models/user_topic_progress.model";
 import { worksheet_response } from "../models/worksheet_response.model";
 import { mentor_topic_progress } from '../models/mentor_topic_progress.model';
 import { constents } from '../configs/constents.config';
-import AWS from 'aws-sdk';
+// import AWS from 'aws-sdk';
+import {
+  SESClient,
+  SendEmailCommand} from "@aws-sdk/client-ses";
 export default class authService {
     crudService: CRUDService = new CRUDService;
     private otp = '112233';
@@ -500,10 +503,12 @@ export default class authService {
         const result: any = {}
         const otp: any = Math.random().toFixed(6).substr(-6);
 
-        AWS.config.update({
+        const sesClient = new SESClient({
             region: 'ap-south-1',
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+            credentials:{
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID || "", 
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ""
+            }
         });
         let params = {
             Destination: { /* required */
@@ -534,14 +539,14 @@ export default class authService {
         };
         try {
             // Create the promise and SES service object
-            let sendPromise = new AWS.SES({ apiVersion: '2010-12-01' }).sendEmail(params).promise();
+            // let sendPromise = sesClient.send(params);
             // Handle promise's fulfilled/rejected states
-            await sendPromise.then((data: any) => {
-                result['messageId'] = data.MessageId;
-                result['otp'] = otp;
-            }).catch((err: any) => {
-                throw err;
-            });
+            // await sendPromise.then((data: any) => {
+            //     result['messageId'] = data.MessageId;
+            //     result['otp'] = otp;
+            // }).catch((err: any) => {
+            //     throw err;
+            // });
             return result;
         } catch (error) {
             return error;
