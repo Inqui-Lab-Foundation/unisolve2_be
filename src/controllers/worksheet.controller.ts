@@ -201,7 +201,9 @@ export default class WorksheetController extends BaseController {
             let file_name_prefix: any;
             if (process.env.NODE_ENV == "prod") {
                 file_name_prefix = `worksheets`
-            } else {
+            } else if (process.env.NODE_ENV == "dev"){
+                file_name_prefix = `worksheets/dev`
+            }else {
                 file_name_prefix = `worksheets/stage`
             }
             for (const file_name of Object.keys(files)) {

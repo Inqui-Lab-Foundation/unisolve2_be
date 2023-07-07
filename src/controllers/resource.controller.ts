@@ -67,7 +67,9 @@ export default class ResourceController extends BaseController {
             let file_name_prefix: any;
             if (process.env.DB_HOST?.includes("prod")) {
                 file_name_prefix = `resources`
-            } else {
+            } else if(process.env.DB_HOST?.includes("dev")){
+                file_name_prefix = `resources/dev`
+            }else {
                 file_name_prefix = `resources/stage`
             }
             for (const file_name of Object.keys(files)) {
