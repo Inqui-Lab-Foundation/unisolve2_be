@@ -200,9 +200,9 @@ export default class WorksheetController extends BaseController {
             let attachments: any = [];
             let file_name_prefix: any;
             if (process.env.NODE_ENV == "prod") {
-                file_name_prefix = `mldv_worksheets`
+                file_name_prefix = `worksheets`
             } else {
-                file_name_prefix = `mldv_worksheets/stage`
+                file_name_prefix = `worksheets/stage`
             }
             for (const file_name of Object.keys(files)) {
                 const file = files[file_name];
@@ -215,7 +215,7 @@ export default class WorksheetController extends BaseController {
                 }
                 file.originalFilename = `${file_name_prefix}/${filename}/${file.originalFilename}`;
                 let params = {
-                    Bucket: 'unisole-assets',
+                    Bucket: `${process.env.BUCKET}`,
                     Key: file.originalFilename,
                     Body: readFile
                 };

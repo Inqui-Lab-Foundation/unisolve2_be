@@ -78,7 +78,7 @@ export default class ResourceController extends BaseController {
                 }
                 file.originalFilename = `${file_name_prefix}/${file.originalFilename}`;
                 let params = {
-                    Bucket: 'unisole-assets',
+                    Bucket: `${process.env.BUCKET}`,
                     Key: file.originalFilename,
                     Body: readFile
                 };
