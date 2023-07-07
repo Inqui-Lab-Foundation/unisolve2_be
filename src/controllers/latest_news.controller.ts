@@ -67,7 +67,10 @@ export default class LatestNewsController extends BaseController {
             let file_name_prefix: any;
             if (process.env.DB_HOST?.includes("prod")) {
                 file_name_prefix = `LatestNews`
-            } else {
+            } else if(process.env.DB_HOST?.includes("dev")) {
+                file_name_prefix = `LatestNews/dev`
+            }
+            else {
                 file_name_prefix = `LatestNews/stage`
             }
             for (const file_name of Object.keys(files)) {
@@ -78,7 +81,7 @@ export default class LatestNewsController extends BaseController {
                 }
                 file.originalFilename = `${file_name_prefix}/${file.originalFilename}`;
                 let params = {
-                    Bucket: 'unisole-assets',
+                    Bucket: `${process.env.BUCKET}`,
                     Key: file.originalFilename,
                     Body: readFile
                 };
