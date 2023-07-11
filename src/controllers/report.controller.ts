@@ -34,6 +34,7 @@ export default class ReportController extends BaseController {
         this.router.get(`${this.path}/allMentorReports`, this.getAllMentorReports.bind(this));
         this.router.get(`${this.path}/mentorRegList`, this.getMentorRegList.bind(this));
         this.router.get(this.path + "/preSurvey", this.mentorPreSurvey.bind(this));
+        this.router.get(this.path + "/postSurvey", this.mentorPostSurvey.bind(this));
         this.router.get(this.path + "/courseComplete", this.courseComplete.bind(this));
         this.router.get(this.path + "/courseInComplete", this.courseInComplete.bind(this));
         this.router.get(this.path + "/notRegistered", this.notRegistered.bind(this));
@@ -178,6 +179,70 @@ export default class ReportController extends BaseController {
             next(err)
         }
     }
+
+    protected async mentorPostSurvey(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const { quiz_survey_id } = req.params
+            const { page, size, role } = req.query;
+            let condition = role ? role : 'MENTOR';
+            // let condition = role ? { role: { [Op.eq]: role } } : null;
+            const { limit, offset } = this.getPagination(page, size);
+            const modelClass = await this.loadModel(this.model).catch(error => {
+                next(error)
+            });
+            const paramStatus: any = req.query.status;
+            let whereClauseStatusPart: any = {};
+            let whereClauseStatusPartLiteral = "1=1";
+            let addWhereClauseStatusPart = false
+            if (paramStatus && (paramStatus in constents.common_status_flags.list)) {
+                if (paramStatus === 'ALL') {
+                    whereClauseStatusPart = {};
+                    addWhereClauseStatusPart = false;
+                } else {
+                    whereClauseStatusPart = { "status": paramStatus };
+                    addWhereClauseStatusPart = true;
+                }
+            } else {
+                whereClauseStatusPart = { "status": "ACTIVE" };
+                addWhereClauseStatusPart = true;
+            }
+            const mentorsResult = await quiz_survey_response.findAll({
+                attributes: [
+                    "quiz_response_id",
+                    "updated_at"
+                ],
+                raw: true,
+                where: {
+                    [Op.and]: [
+                        whereClauseStatusPart,
+                            { quiz_survey_id: 3 } 
+                    ]
+                },
+                include: [
+                    {
+                        model: user,
+                        attributes: [
+                            "full_name",
+                            "created_at",
+                            "updated_at"
+                        ],
+                        where: { role: condition }
+                    }
+                ],
+                limit, offset
+            });
+            if (!mentorsResult) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (mentorsResult instanceof Error) {
+                throw mentorsResult
+            }
+            res.status(200).send(dispatcher(res, mentorsResult, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
+
     protected async courseComplete(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { quiz_survey_id } = req.params
