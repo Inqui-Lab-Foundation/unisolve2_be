@@ -38,5 +38,6 @@ export const wildcardRoutes = [
     "/assets/reflectiveQuiz/*",
     "/script",
     "/otpScript",
-    "/api/v1/auth/roadMap"
+    "/api/v1/auth/roadMap",
+    "/api/v1/district_coordinators/login"
 ];
