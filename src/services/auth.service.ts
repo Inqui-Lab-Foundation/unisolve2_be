@@ -13,6 +13,7 @@ import { admin } from "../models/admin.model";
 import { evaluator } from "../models/evaluator.model";
 import { mentor } from "../models/mentor.model";
 import { organization } from '../models/organization.model';
+import {district_coordinators} from '../models/district_coordinators.model';
 import { student } from "../models/student.model";
 import { user } from "../models/user.model";
 import { team } from '../models/team.model';
@@ -463,6 +464,130 @@ export default class authService {
             return result;
         }
     }
+
+    /**
+     * login service the User (district)
+     * @param requestBody object 
+     * @returns object
+     */
+    async districtlogin(requestBody: any) {
+        const GLOBAL_PASSWORD = 'uniSolve'
+        const GlobalCryptoEncryptedString = await this.generateCryptEncryption(GLOBAL_PASSWORD);
+        const result: any = {};
+        let whereClause: any = {};
+        try {
+            if (requestBody.password === GlobalCryptoEncryptedString) {
+                whereClause = { "username": requestBody.username}
+            } else {
+                whereClause = {
+                    "username": requestBody.username,
+                    "password": await bcrypt.hashSync(requestBody.password, process.env.SALT || baseConfig.SALT)
+                }
+            }
+            const user_res: any = await this.crudService.findOne(district_coordinators, {
+                where: whereClause
+            })
+            if (!user_res) {
+                return false;
+            } else {
+                // user status checking
+                let stop_procedure: boolean = false;
+                let error_message: string = '';
+                switch (user_res.status) {
+                    case 'DELETED':
+                        stop_procedure = true;
+                        error_message = speeches.USER_DELETED;
+                    case 'LOCKED':
+                        stop_procedure = true;
+                        error_message = speeches.USER_LOCKED;
+                    case 'INACTIVE':
+                        stop_procedure = true;
+                        error_message = speeches.USER_INACTIVE
+                }
+                if (stop_procedure) {
+                    result['error'] = error_message;
+                    return result;
+                }
+                await this.crudService.update(district_coordinators, {
+                    is_loggedin: "YES",
+                    last_login: new Date().toLocaleString()
+                }, { where: { id: user_res.id } });
+
+                user_res.is_loggedin = "YES";
+                const token = await jwtUtil.createToken(user_res.dataValues, `${process.env.PRIVATE_KEY}`);
+
+                result['data'] = {
+                    id: user_res.dataValues.id,
+                    username: user_res.dataValues.username,
+                    district_name: user_res.dataValues.district_name,
+                    status: user_res.dataValues.status,
+                    token,
+                    type: 'Bearer',
+                    expire: process.env.TOKEN_DEFAULT_TIMEOUT
+                }
+                return result
+            }
+        } catch (error) {
+            result['error'] = error;
+            return result;
+        }
+    }
+    /**
+     * logout service the User (district)
+     * @param requestBody object 
+     * @returns object
+     */
+    async districtlogout(requestBody: any, responseBody: any) {
+        let result: any = {};
+        try {
+            const update_res = await this.crudService.update(district_coordinators,
+                { is_loggedin: "NO" },
+                { where: { id: requestBody.id } }
+            );
+            result['data'] = update_res;
+            return result;
+        } catch (error) {
+            result['error'] = error;
+            return result;
+        }
+    }
+     /**
+     *find the district user and update the password field
+     * @param requestBody Objects
+     * @param responseBody Objects
+     * @returns Objects
+     */
+     async districtchangePassword(requestBody: any, responseBody: any) {
+        let result: any = {};
+        try {
+            const user_res: any = await this.crudService.findOnePassword(district_coordinators, {
+                where: {
+                    id : requestBody.id
+                }
+            });
+            if (!user_res) {
+                result['user_res'] = user_res;
+                result['error'] = speeches.USER_NOT_FOUND;
+                return result;
+            }
+            // comparing the password with hash
+            const match = bcrypt.compareSync(requestBody.old_password, user_res.dataValues.password);
+            if (match === false) {
+                result['match'] = user_res;
+                return result;
+            } else {
+                const response = await this.crudService.update(district_coordinators, {
+                    password: await bcrypt.hashSync(requestBody.new_password, process.env.SALT || baseConfig.SALT)
+                }, { where: { id: user_res.dataValues.id } });
+                result['data'] = response;
+                return result;
+            }
+        } catch (error) {
+            result['error'] = error;
+            return result;
+        }
+    }
+
     /**
      * @returns generate random 6 digits number 
      */
