@@ -278,6 +278,7 @@ export default class QuizController extends BaseController {
                 let result: any = {}
                 result = resultModel.dataValues
                 result["is_correct"] = responseObjToAdd.is_correct;
+                result['correct_answer'] = responseObjToAdd.correct_answer;
                 if (responseObjToAdd.is_correct) {
                     result["msg"] = questionAnswered.dataValues.msg_ans_correct;
                     result["ar_image"] = questionAnswered.dataValues.ar_image_ans_correct;
