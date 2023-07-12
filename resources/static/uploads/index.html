@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Push Notifications using Node.js and Web Push</title>
+    <!-- <link rel="icon" type="image/png" href="./icon.png"
+        sizes="196x196" class="next-head"> -->
+    <style>
+        html {
+            box-sizing: border-box;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: inherit;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Roboto", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        header {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #33154F;
+            color: #11D771;
+            margin-bottom: 30px;
+        }
+
+        .buttons {
+            text-align: center;
+        }
+
+        button {
+            display: inline-block;
+            height: 38px;
+            padding: 0 30px;
+            color: #fff;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 38px;
+            letter-spacing: .1rem;
+            text-transform: uppercase;
+            text-decoration: none;
+            white-space: nowrap;
+            background-color: transparent;
+            border-radius: 4px;
+            border: 1px solid #bbb;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        button:hover {
+            outline: 0;
+        }
+
+        .trigger-push {
+            background-color: #073525;
+            border: 1px solid #073525;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Web Push Notifications Demo</h1>
+    </header>
+
+    <div class="buttons">
+        <button class="trigger-push">Trigger Push Notification</button>
+    </div>
+
+    <script src="./main.js"> </script>
+</body>
+
+</html>
