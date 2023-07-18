@@ -17,6 +17,7 @@ import ReportService from "../services/report.service";
 import { Op, QueryTypes } from 'sequelize';
 import { user } from "../models/user.model";
 import { team } from "../models/team.model";
+import {baseConfig} from "../configs/base.config";
 //import { reflective_quiz_response } from '../models/reflective_quiz_response.model';
 
 export default class ReportController extends BaseController {
@@ -268,7 +269,9 @@ export default class ReportController extends BaseController {
                 whereClauseStatusPart = { "status": "ACTIVE" };
                 addWhereClauseStatusPart = true;
             }
-            const mentorsResult = await db.query("SELECT mentors.organization_code, mentors.district, mentors.full_name,(SELECT COUNT(mentor_topic_progress_id)FROM mentor_topic_progress AS mentor_progress WHERE mentor_progress.user_id=mentors.user_id) AS 'count' FROM mentors LEFT OUTER JOIN mentor_topic_progress AS mentor_progress ON mentors.user_id=mentor_progress.user_id where (SELECT COUNT(mentor_topic_progress_id)FROM mentor_topic_progress AS mentor_progress WHERE mentor_progress.user_id=mentors.user_id)= 9 GROUP BY mentor_progress.user_id", { type: QueryTypes.SELECT });
+
+
+            const mentorsResult = await db.query(`SELECT mentors.organization_code, mentors.district, mentors.full_name,(SELECT COUNT(mentor_topic_progress_id)FROM mentor_topic_progress AS mentor_progress WHERE mentor_progress.user_id=mentors.user_id) AS 'count' FROM mentors LEFT OUTER JOIN mentor_topic_progress AS mentor_progress ON mentors.user_id=mentor_progress.user_id where (SELECT COUNT(mentor_topic_progress_id)FROM mentor_topic_progress AS mentor_progress WHERE mentor_progress.user_id=mentors.user_id)= ${baseConfig.MENTOR_COURSE} GROUP BY mentor_progress.user_id`, { type: QueryTypes.SELECT });
             if (!mentorsResult) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
