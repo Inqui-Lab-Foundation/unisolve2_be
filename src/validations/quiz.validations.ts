@@ -31,6 +31,9 @@ export const quizSubmitResponseSchema = Joi.object().keys({
     selected_option:Joi.string().required().messages({
         'string.empty': speeches.SELCTED_OPTION_REQUIRED
     }),
+    attempts:Joi.number().required().messages({
+        'string.empty': speeches.ATTEMPTS_REQUIRED
+    })
     // question:Joi.string().required().messages({
     //     'string.empty': speeches.QUESTION_REQUIRED
     // }),

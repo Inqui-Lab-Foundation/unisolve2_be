@@ -32,6 +32,7 @@ export default class QuizController extends BaseController {
         //example route to add 
         this.router.get(this.path + "/:id/nextQuestion/", this.getNextQuestion.bind(this));
         this.router.post(this.path + "/:id/response/", validationMiddleware(quizSubmitResponseSchema), this.submitResponse.bind(this));
+        this.router.get(this.path+"/result",this.getResult.bind(this));
         super.initializeRoutes();
     }
 
@@ -192,7 +193,7 @@ export default class QuizController extends BaseController {
 
             const quiz_id = req.params.id;
 
-            const { quiz_question_id  } = req.body;
+            const { quiz_question_id , attempts } = req.body;
             let selected_option = req.body.selected_option;
             selected_option = res.locals.translationService.getTranslationKey(selected_option)
             // console.log(selected_option)
@@ -206,6 +207,9 @@ export default class QuizController extends BaseController {
 
             if (!user_id) {
                 throw unauthorized(speeches.UNAUTHORIZED_ACCESS);
+            }
+            if (!attempts) {
+                throw unauthorized(speeches.ATTEMPTS_REQUIRED);
             }
 
             const questionAnswered = await this.crudService.findOne(quiz_question, { where: { quiz_question_id: quiz_question_id } });
@@ -234,7 +238,7 @@ export default class QuizController extends BaseController {
                 topic_to_redirect_to = null
             }
 
-            const quizRes = await this.crudService.findOne(quiz_response, { where: { quiz_id: quiz_id, user_id: user_id } });
+            const quizRes = await this.crudService.findOne(quiz_response, { where: { quiz_id: quiz_id, user_id: user_id , attempts:attempts} });
             if (quizRes instanceof Error) {
                 throw internal(quizRes.message)
             }
@@ -252,7 +256,10 @@ export default class QuizController extends BaseController {
             else {
                 hasQuestionBeenAnsweredCorrectly = selected_option == questionAnswered.correct_ans
             }
-
+            let updateScore = quizRes.score;
+            if(hasQuestionBeenAnsweredCorrectly === true){
+                updateScore = updateScore+1;
+            }
             let responseObjToAdd: any = {}
             responseObjToAdd = {
                 ...req.body,
@@ -260,7 +267,8 @@ export default class QuizController extends BaseController {
                 correct_answer: questionAnswered.dataValues.correct_ans,
                 level: questionAnswered.dataValues.level,
                 question_no: questionAnswered.dataValues.question_no,
-                is_correct: hasQuestionBeenAnsweredCorrectly
+                is_correct: hasQuestionBeenAnsweredCorrectly,
+                score:updateScore
             }
 
             let user_response: any = {}
@@ -270,6 +278,7 @@ export default class QuizController extends BaseController {
                 user_response[questionAnswered.dataValues.question_no] = responseObjToAdd;
 
                 dataToUpsert["response"] = JSON.stringify(user_response);
+                dataToUpsert['score'] = responseObjToAdd.score;
 
                 const resultModel = await this.crudService.update(quizRes, dataToUpsert, { where: { quiz_id: quiz_id, user_id: user_id } })
                 if (resultModel instanceof Error) {
@@ -278,6 +287,8 @@ export default class QuizController extends BaseController {
                 let result: any = {}
                 result = resultModel.dataValues
                 result["is_correct"] = responseObjToAdd.is_correct;
+                result['correct_answer'] = responseObjToAdd.correct_answer;
+                result['score'] = responseObjToAdd.score
                 if (responseObjToAdd.is_correct) {
                     result["msg"] = questionAnswered.dataValues.msg_ans_correct;
                     result["ar_image"] = questionAnswered.dataValues.ar_image_ans_correct;
@@ -298,6 +309,7 @@ export default class QuizController extends BaseController {
 
                 dataToUpsert["response"] = JSON.stringify(user_response);
                 dataToUpsert = { ...dataToUpsert, created_by: user_id }
+                dataToUpsert['attempts'] = attempts;
 
                 const resultModel = await this.crudService.create(quiz_response, dataToUpsert)
                 if (resultModel instanceof Error) {
@@ -326,4 +338,25 @@ export default class QuizController extends BaseController {
         }
     }
     //TODO: 
+
+    protected async getResult(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            const {user_id , quiz_id} = req.query;
+            let result: any = {}
+            const user_quizData = await this.crudService.findAll(quiz_response,{ where: { quiz_id: quiz_id, user_id: user_id } })
+            if(user_quizData.length !== 0){
+                result = user_quizData;
+                res.status(200).send(dispatcher(res,result));
+            }
+            else{
+                res.status(200).send(dispatcher(res,"user not stared"));
+                console.log("hjgjsvaj")
+            }
+            console.log(user_quizData)
+        }catch(err){
+            next(err)
+        }
+        
+
+    }
 }
