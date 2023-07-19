@@ -42,6 +42,7 @@ import EvaluationProcess from "./controllers/evaluation_process.controller";
 import ResourceController from "./controllers/resource.controller";
 import LatestNewsController from "./controllers/latest_news.controller";
 import DistrictController from "./controllers/district.controller";
+import popupController from "./controllers/popup.controller";
 
 // validating env variables
 validateEnv();
@@ -89,7 +90,8 @@ try {
         new EvaluationProcess,
         new ResourceController,
         new LatestNewsController,
-        new DistrictController
+        new DistrictController,
+        new popupController
     ], Number(process.env.APP_PORT));
     // starting app
     app.listen();
