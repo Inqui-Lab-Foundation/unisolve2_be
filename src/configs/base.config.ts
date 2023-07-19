@@ -49,5 +49,10 @@ export const baseConfig = {
   STREAM_INTERVAL: "1000", // in milliseconds 1000 = 1 second",
 
   EMAIL_USER: "harishkumar@inqui-lab.org",
-  EMAIL_PASSWORD: ""
+  EMAIL_PASSWORD: "",
+
+  MENTOR_COURSE:"8"
 };
+
+
+
