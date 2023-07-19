@@ -17,6 +17,7 @@ import logger from "../utils/logger";
 import { quizNextQuestionSchema, quizSchema, quizSubmitResponseSchema, quizUpdateSchema } from "../validations/quiz.validations";
 import ValidationsHolder from "../validations/validationHolder";
 import BaseController from "./base.controller";
+import db from "../utils/dbconnection.util"
 
 export default class QuizController extends BaseController {
 
@@ -46,6 +47,7 @@ export default class QuizController extends BaseController {
     protected async getNextQuestion(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try{
             const quiz_id = req.params.id;
+            const attempts = req.query.attempts;
             const paramStatus: any = req.query.status;
             const user_id = res.locals.user_id;
             let isMentorCourse = false;
@@ -54,6 +56,9 @@ export default class QuizController extends BaseController {
             }
             if (!user_id) {
                 throw unauthorized(speeches.UNAUTHORIZED_ACCESS);
+            }
+            if (!attempts) {
+                throw unauthorized(speeches.ATTEMPTS_REQUIRED);
             }
             //check if the given quiz is a valid topic
             const curr_topic = await this.crudService.findOne(course_topic, { where: { "topic_type_id": quiz_id, "topic_type": "QUIZ", status: 'ACTIVE' } })
@@ -68,7 +73,7 @@ export default class QuizController extends BaseController {
                 // console.log("isMentorCourse",isMentorCourse)
             }
     
-            const quizRes = await this.crudService.findOne(quiz_response, { where: { quiz_id: quiz_id, user_id: user_id } });
+            const quizRes = await this.crudService.findOne(quiz_response, { where: { quiz_id: quiz_id, user_id: user_id ,attempts:attempts} });
             if (quizRes instanceof Error) {
                 throw internal(quizRes.message)
             }
@@ -318,6 +323,7 @@ export default class QuizController extends BaseController {
                 let result: any = {}
                 result = resultModel.dataValues
                 result["is_correct"] = responseObjToAdd.is_correct;
+                result['correct_answer'] = responseObjToAdd.correct_answer;
                 if (responseObjToAdd.is_correct) {
                     result["msg"] = questionAnswered.dataValues.msg_ans_correct;
                     result["ar_image"] = questionAnswered.dataValues.ar_image_ans_correct;
@@ -343,16 +349,16 @@ export default class QuizController extends BaseController {
         try{
             const {user_id , quiz_id} = req.query;
             let result: any = {}
-            const user_quizData = await this.crudService.findAll(quiz_response,{ where: { quiz_id: quiz_id, user_id: user_id } })
+            const totalquestions = await db.query(`SELECT count(*) as allquestions FROM unisolve_db.quiz_questions where quiz_id = ${quiz_id}`);
+            result['all'] = totalquestions[0];
+            const user_quizData = await this.crudService.findAll(quiz_response,{ where: { quiz_id: quiz_id, user_id: user_id }});
             if(user_quizData.length !== 0){
-                result = user_quizData;
+                result['data'] = user_quizData;
                 res.status(200).send(dispatcher(res,result));
             }
             else{
                 res.status(200).send(dispatcher(res,"user not stared"));
-                console.log("hjgjsvaj")
             }
-            console.log(user_quizData)
         }catch(err){
             next(err)
         }
