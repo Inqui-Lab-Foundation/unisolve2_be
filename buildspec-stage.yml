@@ -10,7 +10,7 @@ phases:
       - npm install
   build:
      commands:
-      - aws s3 cp s3://unisolve2-cicd-bkt/cicd/stage/.env .
+      - aws s3 cp s3://devops-cicd-bkt/stage/.env .
       - cat .env
       - chmod +x ./scripts/*.sh
       - echo npm run build
