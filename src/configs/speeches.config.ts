@@ -71,6 +71,7 @@ export const speeches = {
     LEVEL_REQUIRED: "Level is required, it should not be empty.",
     CATEGORY_REQUIRED: "Category is required, it should not be empty.",
     QUESTION_NO_REQUIRED: "Question no is required, it should not be empty.",
+    ATTEMPTS_REQUIRED : "Attempts is required, it should not be empty.",
 
     //worksheet submit resoponse keys 
     WORKSHEET_ID_REQUIRED: "WORKSHEET ID is required, it should not be empty.",

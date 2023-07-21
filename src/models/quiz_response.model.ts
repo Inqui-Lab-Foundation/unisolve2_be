@@ -12,6 +12,8 @@ export class quiz_response extends Model<InferAttributes<quiz_response>, InferCr
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
+    declare attempts:number;
+    declare score:number
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -41,6 +43,14 @@ quiz_response.init(
         response: {
             type: DataTypes.TEXT('long'),
             allowNull: false
+        },
+        attempts: {
+            type: DataTypes.INTEGER,
+            defaultValue: 1
+        },
+        score: {
+            type: DataTypes.INTEGER,
+            allowNull: true
         },
         status: {
             type: DataTypes.ENUM(...Object.values(constents.common_status_flags.list)),
