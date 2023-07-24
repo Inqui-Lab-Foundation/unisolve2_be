@@ -349,7 +349,7 @@ export default class QuizController extends BaseController {
         try{
             const {user_id , quiz_id} = req.query;
             let result: any = {}
-            const totalquestions = await db.query(`SELECT count(*) as allquestions FROM unisolve_db.quiz_questions where quiz_id = ${quiz_id}`);
+            const totalquestions = await db.query(`SELECT count(*) as allquestions FROM quiz_questions where quiz_id = ${quiz_id} and status = 'ACTIVE'`);
             result['all'] = totalquestions[0];
             const user_quizData = await this.crudService.findAll(quiz_response,{ where: { quiz_id: quiz_id, user_id: user_id }});
             if(user_quizData.length !== 0){
