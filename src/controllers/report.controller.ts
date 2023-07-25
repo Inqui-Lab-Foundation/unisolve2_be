@@ -44,6 +44,7 @@ export default class ReportController extends BaseController {
         this.router.get(this.path + "/mentorTeamsStudents", this.teamRegistered.bind(this));
         this.router.get(this.path + "/challengesCount", this.challengesLevelCount.bind(this));
         this.router.get(this.path + "/challengesDistrictCount", this.districtWiseChallengesCount.bind(this));
+        this.router.get(this.path + "/mentorRegNONregCount", this.mentorRegNONregCount.bind(this));
         // super.initializeRoutes();
     }
 
@@ -686,6 +687,31 @@ export default class ReportController extends BaseController {
             }
 
             res.status(200).send(dispatcher(res, organisationsResult, 'success'));
+        } catch (err) {
+            next(err)
+        }
+    }
+    protected async mentorRegNONregCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            let data: any = {}
+            const notRegisteredCount = await db.query("SELECT COUNT(*) AS 'notRegisteredCount' FROM organizations WHERE NOT EXISTS( SELECT mentors.organization_code FROM mentors WHERE organizations.organization_code = mentors.organization_code ); ", { type: QueryTypes.SELECT });
+            // data['Count']= [notRegisteredCount[0], RegisteredCount[0]]
+            const RegisteredCount = await db.query("SELECT count(DISTINCT organization_code) as 'RegisteredCount' FROM mentors;", { type: QueryTypes.SELECT })
+            // data['RegisteredCount'] = RegisteredCount[0]
+            data['Count']= [notRegisteredCount[0], RegisteredCount[0]]
+            const reglist = await db.query("SELECT COUNT(*) AS 'RegisteredCount', district FROM organizations WHERE EXISTS( SELECT mentors.organization_code FROM mentors WHERE organizations.organization_code = mentors.organization_code) GROUP BY district;", { type: QueryTypes.SELECT })
+            const nonreglist = await db.query("SELECT COUNT(*) AS 'notRegisteredCount',district FROM organizations WHERE NOT EXISTS( SELECT mentors.organization_code FROM mentors WHERE organizations.organization_code = mentors.organization_code ) group by district ;", { type: QueryTypes.SELECT })
+            const dis = await db.query("SELECT district FROM unisolve_db.organizations group by district;", { type: QueryTypes.SELECT })
+            data['reglist'] = reglist;
+            data['nonreglist']= nonreglist;
+            data['district'] = dis;
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
         } catch (err) {
             next(err)
         }
