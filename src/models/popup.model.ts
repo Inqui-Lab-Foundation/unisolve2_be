@@ -5,7 +5,7 @@ import { constents } from '../configs/constents.config';
 export class popup extends Model<InferAttributes<popup>, InferCreationAttributes<popup>> {
     
     declare popup_id: CreationOptional<number>;
-    declare role: string;
+    declare on_off: Enumerator;
     declare url: string;
     declare status: Enumerator;
     declare created_by: number;
@@ -13,15 +13,15 @@ export class popup extends Model<InferAttributes<popup>, InferCreationAttributes
     declare updated_by: number;
     declare updated_at: Date;
     
-    static modelTableName = "instructions";
+    static modelTableName = "popup";
     static structure:any =  {
         popup_id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true
         },
-        role: {
-            type: DataTypes.STRING,
+        on_off :{
+            type: DataTypes.ENUM(...Object.values(constents.evaluation_status.list)),
             allowNull: true
         },
         url: {

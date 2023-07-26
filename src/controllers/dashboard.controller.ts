@@ -132,6 +132,9 @@ export default class DashboardController extends BaseController {
                     [
                         db.literal(`(
                             SELECT count(*) FROM quiz_responses where user_id = ${mentor_user_id})`),"Quiz_completed_count"
+                    ],
+                    [ 
+                        db.literal(`(SELECT count(*) FROM mentor_course_topics where status="ACTIVE")`),"Total_course_count"
                     ]
                 ],
                 include: {

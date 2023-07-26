@@ -113,16 +113,17 @@ export default class QuizController extends BaseController {
 
                 } else if(!isMentorCourse){// converted to else if from else to take into account diff behaviour of mentor course which is it doesnt have hard medium easy instead it will have only one question per question no which is hard
                     // console.log("came here2");
-
-                    question_no = lastQuestionAnsewered.question_no;
-                    if (lastQuestionAnsewered.level == "HARD") {
-                        level = "MEDIUM"
-                    } else if (lastQuestionAnsewered.level == "MEDIUM") {
-                        level = "EASY"
-                    } else if (lastQuestionAnsewered.level == "EASY") {
-                        question_no = lastQuestionAnsewered.question_no + 1;
+                    question_no = lastQuestionAnsewered.question_no + 1;
                         level = "HARD"
-                    }
+                    // question_no = lastQuestionAnsewered.question_no;
+                    // if (lastQuestionAnsewered.level == "HARD") {
+                    //     level = "MEDIUM"
+                    // } else if (lastQuestionAnsewered.level == "MEDIUM") {
+                    //     level = "EASY"
+                    // } else if (lastQuestionAnsewered.level == "EASY") {
+                    //     question_no = lastQuestionAnsewered.question_no + 1;
+                    //     level = "HARD"
+                    // }
                 }else{
                     // console.log("came here3");
                     //since this is mentor quiz id hence next question will not advance to easy medium instead will remain on same question untill answered correctly
@@ -132,7 +133,7 @@ export default class QuizController extends BaseController {
 
                 }
             }
-    
+
             const nextQuestionsToChooseFrom = await this.crudService.findOne(quiz_question, {
                 where: {
                     [Op.and]: [
@@ -144,7 +145,7 @@ export default class QuizController extends BaseController {
     
                 }
             })
-    
+            
             if (nextQuestionsToChooseFrom instanceof Error) {
                 throw internal(nextQuestionsToChooseFrom.message)
             }
@@ -349,7 +350,7 @@ export default class QuizController extends BaseController {
         try{
             const {user_id , quiz_id} = req.query;
             let result: any = {}
-            const totalquestions = await db.query(`SELECT count(*) as allquestions FROM unisolve_db.quiz_questions where quiz_id = ${quiz_id}`);
+            const totalquestions = await db.query(`SELECT count(*) as allquestions FROM quiz_questions where quiz_id = ${quiz_id} and status = 'ACTIVE'`);
             result['all'] = totalquestions[0];
             const user_quizData = await this.crudService.findAll(quiz_response,{ where: { quiz_id: quiz_id, user_id: user_id }});
             if(user_quizData.length !== 0){
