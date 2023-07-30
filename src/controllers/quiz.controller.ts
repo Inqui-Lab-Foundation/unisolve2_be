@@ -264,7 +264,12 @@ export default class QuizController extends BaseController {
             }
             let updateScore = quizRes.score;
             if(hasQuestionBeenAnsweredCorrectly === true){
-                updateScore = updateScore+1;
+                if(updateScore === undefined){
+                    updateScore = 1
+                }
+                else {
+                    updateScore = updateScore+1;
+                }
             }
             let responseObjToAdd: any = {}
             responseObjToAdd = {
@@ -325,6 +330,7 @@ export default class QuizController extends BaseController {
                 result = resultModel.dataValues
                 result["is_correct"] = responseObjToAdd.is_correct;
                 result['correct_answer'] = responseObjToAdd.correct_answer;
+                result['score'] = responseObjToAdd.score;
                 if (responseObjToAdd.is_correct) {
                     result["msg"] = questionAnswered.dataValues.msg_ans_correct;
                     result["ar_image"] = questionAnswered.dataValues.ar_image_ans_correct;
