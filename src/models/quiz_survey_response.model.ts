@@ -79,5 +79,5 @@ quiz_survey_response.init(
     }
 );
 
-quiz_survey_response.belongsTo(user, { foreignKey: 'user_id', constraints: false, scope: { role: 'MENTOR' } });
+quiz_survey_response.belongsTo(user, { foreignKey: 'user_id', constraints: false,scope: { role: ['MENTOR','STUDENT']}});
 user.hasOne(quiz_survey_response, { foreignKey: 'user_id', constraints: false });
