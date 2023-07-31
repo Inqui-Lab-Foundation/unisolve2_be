@@ -262,6 +262,7 @@ export default class QuizController extends BaseController {
             else {
                 hasQuestionBeenAnsweredCorrectly = selected_option == questionAnswered.correct_ans
             }
+            
             let updateScore = quizRes.score;
             if(hasQuestionBeenAnsweredCorrectly === true){
                 if(updateScore === undefined){
@@ -320,6 +321,7 @@ export default class QuizController extends BaseController {
 
                 dataToUpsert["response"] = JSON.stringify(user_response);
                 dataToUpsert = { ...dataToUpsert, created_by: user_id }
+                dataToUpsert['score'] = responseObjToAdd.score;
                 dataToUpsert['attempts'] = attempts;
 
                 const resultModel = await this.crudService.create(quiz_response, dataToUpsert)
