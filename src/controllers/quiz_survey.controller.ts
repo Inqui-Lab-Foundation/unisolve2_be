@@ -330,7 +330,7 @@ export default class QuizSurveyController extends BaseController {
                             delete quizSurvey.dataValues.quiz_survey_questions
                         }
                     }
-                    console.log(quizSurvey.dataValues)
+                    // console.log(quizSurvey.dataValues)
                     return quizSurvey;
                 }))
             }else if(data && data.dataValues){
