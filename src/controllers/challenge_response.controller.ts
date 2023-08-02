@@ -813,6 +813,12 @@ export default class ChallengeResponsesController extends BaseController {
             if (model) {
                 this.model = model;
             };
+            const {status} = req.body;
+            let newDate = new Date();
+            let newFormat = (newDate.getFullYear()) + "-" + (1 + newDate.getMonth()) + "-" + newDate.getUTCDate() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + ':' + newDate.getSeconds();
+            if (status === 'SUBMITTED'){
+                req.body['submitted_at'] = newFormat.trim()
+            }
             const user_id = res.locals.user_id
             const where: any = {};
             where[`${this.model}_id`] = req.params.id;
