@@ -149,9 +149,9 @@ export default class ReportController extends BaseController {
                 addWhereClauseStatusPart = true;
             }
             let quizSurveyIdCondition: any = {};
-            if (role === 'mentor') {
+            if (role === 'MENTOR') {
             quizSurveyIdCondition = { quiz_survey_id: 1 }; 
-            } else if (role === 'student') {
+            } else if (role === 'STUDENT') {
             quizSurveyIdCondition = { quiz_survey_id: 2 };
             }
 
@@ -221,9 +221,9 @@ export default class ReportController extends BaseController {
                 addWhereClauseStatusPart = true;
             }
             let quizSurveyIdCondition: any = {};
-            if (role === 'mentor') {
+            if (role === 'MENTOR') {
             quizSurveyIdCondition = { quiz_survey_id: 3 }; 
-            } else if (role === 'student') {
+            } else if (role === 'STUDENT') {
             quizSurveyIdCondition = { quiz_survey_id: 4 };
             }
 
