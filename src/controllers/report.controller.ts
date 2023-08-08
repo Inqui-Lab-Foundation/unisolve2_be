@@ -45,6 +45,7 @@ export default class ReportController extends BaseController {
         this.router.get(this.path + "/challengesCount", this.challengesLevelCount.bind(this));
         this.router.get(this.path + "/challengesDistrictCount", this.districtWiseChallengesCount.bind(this));
         this.router.get(this.path + "/mentorRegNONregCount", this.mentorRegNONregCount.bind(this));
+        this.router.get(this.path + "/mentorstudentSurveyCount", this.mentorstudentSurveyCount.bind(this));
         // super.initializeRoutes();
     }
 
@@ -120,11 +121,12 @@ export default class ReportController extends BaseController {
             next(err)
         }
     }
+
     protected async mentorPreSurvey(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { quiz_survey_id } = req.params
-            const { page, size, role } = req.query;
-            let condition = role ? role : 'MENTOR';
+            const { page, size, role, qid } = req.query;
+            //let condition = role ? role : 'MENTOR';
             // let condition = role ? { role: { [Op.eq]: role } } : null;
             const { limit, offset } = this.getPagination(page, size);
             const modelClass = await this.loadModel(this.model).catch(error => {
@@ -146,15 +148,24 @@ export default class ReportController extends BaseController {
                 whereClauseStatusPart = { "status": "ACTIVE" };
                 addWhereClauseStatusPart = true;
             }
+            let quizSurveyIdCondition: any = {};
+            if (role === 'MENTOR') {
+            quizSurveyIdCondition = { quiz_survey_id: 1 }; 
+            } else if (role === 'STUDENT') {
+            quizSurveyIdCondition = { quiz_survey_id: 2 };
+            }
+
             const mentorsResult = await quiz_survey_response.findAll({
                 attributes: [
                     "quiz_response_id",
-                    "updated_at"
+                    "updated_at",
+                    "quiz_survey_id"
                 ],
                 raw: true,
                 where: {
                     [Op.and]: [
-                        whereClauseStatusPart
+                        whereClauseStatusPart,
+                        quizSurveyIdCondition,
                     ]
                 },
                 include: [
@@ -165,7 +176,7 @@ export default class ReportController extends BaseController {
                             "created_at",
                             "updated_at"
                         ],
-                        where: { role: condition }
+                        where: { role: role }
                     }
                 ],
                 limit, offset
@@ -185,8 +196,8 @@ export default class ReportController extends BaseController {
     protected async mentorPostSurvey(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { quiz_survey_id } = req.params
-            const { page, size, role } = req.query;
-            let condition = role ? role : 'MENTOR';
+            const { page, size, role, qid } = req.query;
+            //let condition = role ? role : 'MENTOR';
             // let condition = role ? { role: { [Op.eq]: role } } : null;
             const { limit, offset } = this.getPagination(page, size);
             const modelClass = await this.loadModel(this.model).catch(error => {
@@ -195,6 +206,7 @@ export default class ReportController extends BaseController {
             const paramStatus: any = req.query.status;
             let whereClauseStatusPart: any = {};
             let whereClauseStatusPartLiteral = "1=1";
+
             let addWhereClauseStatusPart = false
             if (paramStatus && (paramStatus in constents.common_status_flags.list)) {
                 if (paramStatus === 'ALL') {
@@ -208,16 +220,24 @@ export default class ReportController extends BaseController {
                 whereClauseStatusPart = { "status": "ACTIVE" };
                 addWhereClauseStatusPart = true;
             }
+            let quizSurveyIdCondition: any = {};
+            if (role === 'MENTOR') {
+            quizSurveyIdCondition = { quiz_survey_id: 3 }; 
+            } else if (role === 'STUDENT') {
+            quizSurveyIdCondition = { quiz_survey_id: 4 };
+            }
+
             const mentorsResult = await quiz_survey_response.findAll({
                 attributes: [
                     "quiz_response_id",
-                    "updated_at"
+                    "updated_at",
+                    "quiz_survey_id"
                 ],
                 raw: true,
                 where: {
                     [Op.and]: [
                         whereClauseStatusPart,
-                            { quiz_survey_id: 3 } 
+                        quizSurveyIdCondition
                     ]
                 },
                 include: [
@@ -228,7 +248,7 @@ export default class ReportController extends BaseController {
                             "created_at",
                             "updated_at"
                         ],
-                        where: { role: condition }
+                        where: { role: role }
                     }
                 ],
                 limit, offset
@@ -716,4 +736,29 @@ export default class ReportController extends BaseController {
             next(err)
         }
     }
+    protected async mentorstudentSurveyCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            let data: any = {}
+            const surveyCount = await db.query(`
+            SELECT
+                SUM(quiz_survey_id = 1) AS mentorPreCount,
+                SUM(quiz_survey_id = 3) AS mentorPostCount,
+                SUM(quiz_survey_id = 2) AS studentPreCount,
+                SUM(quiz_survey_id = 4) AS studentPostCount
+            FROM quiz_survey_responses
+            WHERE quiz_survey_id IN (1, 2, 3, 4);`, { type: QueryTypes.SELECT });
+            
+            data['Count']= [surveyCount[0]]
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
 }
+
