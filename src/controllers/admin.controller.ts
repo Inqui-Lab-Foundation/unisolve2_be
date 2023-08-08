@@ -97,7 +97,7 @@ export default class AdminController extends BaseController {
 
     private async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         let adminDetails: any;
-        if (req.query.eAdmin && req.query.eAdmin == 'true') { req.body['role'] = 'EADMIN' } else { req.body['role'] = 'ADMIN' }
+        if (req.query.eAdmin && req.query.eAdmin == 'true') { req.body['role'] = 'EADMIN' } else if(req.query.report && req.query.report == 'true') { req.body['role'] = 'REPORT' } else{ req.body['role'] = 'ADMIN' }
         const result = await this.authService.login(req.body);
         if (!result) {
             return res.status(404).send(dispatcher(res, result, 'error', speeches.USER_NOT_FOUND));
