@@ -818,6 +818,8 @@ export default class ChallengeResponsesController extends BaseController {
             let newFormat = (newDate.getFullYear()) + "-" + (1 + newDate.getMonth()) + "-" + newDate.getUTCDate() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + ':' + newDate.getSeconds();
             if (status === 'SUBMITTED'){
                 req.body['submitted_at'] = newFormat.trim()
+            }else{
+                req.body['submitted_at'] = ''
             }
             const user_id = res.locals.user_id
             const where: any = {};
