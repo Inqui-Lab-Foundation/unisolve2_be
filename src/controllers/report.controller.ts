@@ -46,6 +46,8 @@ export default class ReportController extends BaseController {
         this.router.get(this.path + "/challengesDistrictCount", this.districtWiseChallengesCount.bind(this));
         this.router.get(this.path + "/mentorRegNONregCount", this.mentorRegNONregCount.bind(this));
         this.router.get(this.path + "/mentorstudentSurveyCount", this.mentorstudentSurveyCount.bind(this));
+        this.router.get(this.path + "/mentordeatilscsv", this.mentordeatilscsv.bind(this));
+        
         // super.initializeRoutes();
     }
 
@@ -749,6 +751,75 @@ export default class ReportController extends BaseController {
             WHERE quiz_survey_id IN (1, 2, 3, 4);`, { type: QueryTypes.SELECT });
             
             data['Count']= [surveyCount[0]]
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    protected async mentordeatilscsv(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            let data: any = {}
+            const details = await db.query(`SELECT
+            m.organization_code AS UDISE_CODE,
+            o.organization_name AS School_Name,
+            o.district AS District,
+            o.city AS City,
+            o.principal_name AS HM_Name,
+            o.principal_mobile AS HM_contact,
+            m.user_id AS mentor_user_id,
+            m.full_name AS Teacher_Name,
+            m.gender AS Teacher_Gender,
+            m.mobile AS Teacher_Contact,
+            m.whatapp_mobile AS Teacher_Whatsapp_Contact,
+            qr1.pre_status AS PreSurvey_Status,
+            qr3.post_status AS PostSurvey_Status,
+            CASE
+                WHEN mtp.mentor_course_topic_count >= 1 THEN 'Completed'
+                ELSE 'Not Completed'
+            END AS Course_Status,
+            IFNULL(t.team_count, 0) AS Total_No_Teams,
+            IFNULL(s.total_students, 0) AS Total_Students_Enrolled
+        FROM
+            mentors m
+        LEFT JOIN
+            organizations o ON m.organization_code = o.organization_code
+        LEFT JOIN (
+            SELECT user_id, MAX(CASE WHEN quiz_survey_id = 1 THEN 'Completed' ELSE NULL END) AS pre_status
+            FROM quiz_survey_responses
+            GROUP BY user_id
+        ) qr1 ON m.user_id = qr1.user_id
+        LEFT JOIN (
+            SELECT user_id, MAX(CASE WHEN quiz_survey_id = 3 THEN 'Completed' ELSE NULL END) AS post_status
+            FROM quiz_survey_responses
+            GROUP BY user_id
+        ) qr3 ON m.user_id = qr3.user_id
+        LEFT JOIN (
+            SELECT mentor_id, COUNT(DISTINCT team_id) AS team_count
+            FROM teams
+            GROUP BY mentor_id
+        ) t ON m.mentor_id = t.mentor_id    
+        LEFT JOIN (
+            SELECT team_id, COUNT(*) AS total_students
+            FROM students
+            GROUP BY team_id
+        ) s ON t.mentor_id = s.team_id
+        LEFT JOIN (
+            SELECT user_id, COUNT(DISTINCT mentor_course_topic_id) AS mentor_course_topic_count
+            FROM mentor_topic_progress
+            WHERE mentor_course_topic_id = 8
+            GROUP BY user_id
+        ) mtp ON m.user_id = mtp.user_id
+        Group By    
+        m.organization_code;
+        `, { type: QueryTypes.SELECT });
+            data=details;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
