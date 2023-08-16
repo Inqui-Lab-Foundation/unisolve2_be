@@ -47,6 +47,7 @@ export default class ReportController extends BaseController {
         this.router.get(this.path + "/mentorRegNONregCount", this.mentorRegNONregCount.bind(this));
         this.router.get(this.path + "/mentorstudentSurveyCount", this.mentorstudentSurveyCount.bind(this));
         this.router.get(this.path + "/mentordeatilscsv", this.mentordeatilscsv.bind(this));
+        this.router.get(this.path + "/mentorsummary", this.mentorsummary.bind(this));
         
         // super.initializeRoutes();
     }
@@ -820,6 +821,62 @@ export default class ReportController extends BaseController {
         m.organization_code;
         `, { type: QueryTypes.SELECT });
             data=details;
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
+    protected async mentorsummary(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            let data: any = {}
+            const summary = await db.query(`SELECT 
+                org.district,
+                org.organization_count,
+                org.male_mentor_count,
+                org.female_mentor_count,
+                org.male_mentor_count + org.female_mentor_count AS total_registered_teachers,
+                org.organization_count - (org.male_mentor_count + org.female_mentor_count) AS total_not_registered_teachers
+            FROM (
+                SELECT 
+                    o.district,
+                    COUNT(o.organization_id) AS organization_count,
+                    SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
+                    SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
+                FROM
+                    organizations o
+                LEFT JOIN
+                    mentors m ON o.organization_code = m.organization_code
+                GROUP BY
+                    o.district
+            ) AS org
+            UNION ALL
+            SELECT 
+                'Total',
+                SUM(organization_count),
+                SUM(male_mentor_count),
+                SUM(female_mentor_count),
+                SUM(male_mentor_count + female_mentor_count),
+                SUM(organization_count - (male_mentor_count + female_mentor_count))
+            FROM (
+                SELECT 
+                    o.district,
+                    COUNT(o.organization_id) AS organization_count,
+                    SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
+                    SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
+                FROM
+                    organizations o
+                LEFT JOIN
+                    mentors m ON o.organization_code = m.organization_code
+                GROUP BY
+                    o.district
+            ) AS org;`, { type: QueryTypes.SELECT });
+            data=summary;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
