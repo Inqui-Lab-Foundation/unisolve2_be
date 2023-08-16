@@ -121,6 +121,7 @@ export const speeches = {
     CITY_REQ: "city is required.",
     STATE_REQ: "state is required.",
     DISTRICT_REQ: "district is required.",
+    CATEGORY_REQ:"category is required.",
     COUNTRY_REQ: "country  is required.",
 
     OTP_FAIL: "Wrong OTP Detected.",
