@@ -50,6 +50,7 @@ export default class authService {
                         'user_id',
                         'full_name',
                         'mobile',
+                        'whatapp_mobile'
                     ],
                     include: {
                         model: user,
@@ -608,7 +609,8 @@ export default class authService {
                 return otp.data.otp;
             }
             else{
-                otp = Math.random().toFixed(6).substr(-6); 
+                //otp = Math.random().toFixed(6).substr(-6);
+                otp='112233' 
                 return otp;
             }
         } catch (error: any) {

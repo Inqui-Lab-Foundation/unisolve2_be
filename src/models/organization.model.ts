@@ -10,6 +10,7 @@ export class organization extends Model<InferAttributes<organization>, InferCrea
     declare password: string;
     declare city: string;
     declare district: string;
+    declare category : string;
     declare state: string;
     declare country: string;
     declare principal_name: string;
@@ -22,6 +23,7 @@ export class organization extends Model<InferAttributes<organization>, InferCrea
     declare updated_at: Date;
     declare is_loggedin: Enumerator;
     declare last_login : Date;
+    
 }
 
 organization.init({
@@ -46,6 +48,9 @@ organization.init({
         type: DataTypes.STRING
     },
     district: {
+        type: DataTypes.STRING
+    },
+    category: {
         type: DataTypes.STRING
     },
     state: {
