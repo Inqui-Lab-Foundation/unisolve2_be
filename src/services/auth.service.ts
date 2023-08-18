@@ -50,7 +50,9 @@ export default class authService {
                         'user_id',
                         'full_name',
                         'mobile',
-                        'whatapp_mobile'
+                        'whatapp_mobile',
+                        'gender',
+                        'title'
                     ],
                     include: {
                         model: user,
@@ -332,6 +334,7 @@ export default class authService {
                 const token = await jwtUtil.createToken(user_res.dataValues, `${process.env.PRIVATE_KEY}`);
 
                 result['data'] = {
+                    role:'SCHOOL',
                     organization_id: user_res.dataValues.organization_id,
                     organization_name: user_res.dataValues.organization_name,
                     organization_code: user_res.dataValues.organization_code,
@@ -519,6 +522,7 @@ export default class authService {
 
                 result['data'] = {
                     id: user_res.dataValues.id,
+                    role:'DISTRICT',
                     username: user_res.dataValues.username,
                     district_name: user_res.dataValues.district_name,
                     status: user_res.dataValues.status,
