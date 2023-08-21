@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { Op } from "sequelize";
+import { Op ,QueryTypes } from "sequelize";
 import { constents } from "../configs/constents.config";
 import { teamSchema, teamUpdateSchema } from "../validations/team.validationa";
 import ValidationsHolder from "../validations/validationHolder";
@@ -28,6 +28,7 @@ export default class TeamController extends BaseController {
     protected initializeRoutes(): void {
         //example route to add 
         this.router.get(`${this.path}/:id/members`, this.getTeamMembers.bind(this));
+        this.router.get(`${this.path}/list`, this.getTeamsByMenter.bind(this));
         super.initializeRoutes();
     }
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
@@ -362,6 +363,27 @@ export default class TeamController extends BaseController {
             //     throw data
             // }
         } catch (error) {
+            next(error);
+        }
+    }
+    protected async getTeamsByMenter(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            const mentorId = req.query.mentor_id;
+            const result  = await db.query(`SELECT 
+            teams.team_id,
+            team_name,
+            mentor_id,
+            COUNT(teams.team_id) AS StudentCount
+        FROM
+            teams
+                JOIN
+            students ON teams.team_id = students.team_id
+        WHERE
+            mentor_id = ${mentorId}
+                AND students.status = 'ACTIVE'
+        GROUP BY teams.team_id;`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res, result, "success"))
+        }catch (error) {
             next(error);
         }
     }
