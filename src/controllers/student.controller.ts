@@ -133,6 +133,7 @@ export default class StudentController extends BaseController {
                                     "organization_name",
                                     "principal_name",
                                     "principal_mobile",
+                                    "category",
                                     "city",
                                     "district",
                                     "state",
@@ -184,7 +185,8 @@ export default class StudentController extends BaseController {
                                     attributes: [
                                         'organization_name',
                                         'organization_code',
-                                        "district"
+                                        "district",
+                                        "category"
                                     ]
                                 }
                             }

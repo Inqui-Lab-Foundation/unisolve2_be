@@ -22,6 +22,7 @@ import { challenge_response } from '../models/challenge_response.model';
 import StudentService from '../services/students.service';
 import { user } from '../models/user.model';
 import { object } from 'joi';
+import {baseConfig} from "../configs/base.config";
 
 
 export default class DashboardController extends BaseController {
@@ -59,6 +60,8 @@ export default class DashboardController extends BaseController {
         this.router.get(`${this.path}/evaluatorStats`, this.getEvaluatorStats.bind(this));
         //loggedInUserCount
         this.router.get(`${this.path}/loggedInUserCount`, this.getLoggedInUserCount.bind(this));
+        //quizscore
+        this.router.get(`${this.path}/quizscores`,this.getUserQuizScores.bind(this));
 
         super.initializeRoutes();
     }
@@ -714,4 +717,22 @@ export default class DashboardController extends BaseController {
             next(err)
         }
     }
+    protected async getUserQuizScores(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const {user_id,role} = req.query
+            const quizscores = await db.query(`SELECT user_id,quiz_id,attempts,score FROM unisolve_db.quiz_responses where user_id = ${user_id}`,{ type: QueryTypes.SELECT })
+            result['scores'] = quizscores
+            if(role==="MENTOR"){
+                const currentProgress = await db.query(`SELECT count(*)as currentValue FROM unisolve_db.mentor_topic_progress where user_id = ${user_id}`,{ type: QueryTypes.SELECT })
+                result['currentProgress'] = Object.values(currentProgress[0]).toString()
+                result['totalProgress'] = baseConfig.MENTOR_COURSE
+            }
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    
 };

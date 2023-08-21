@@ -55,7 +55,7 @@ export default class ReportController extends BaseController {
     protected async getMentorRegList(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { quiz_survey_id } = req.params
-            const { page, size, status } = req.query;
+            const { page, size, status ,district} = req.query;
             let condition = {}
             // condition = status ? { status: { [Op.like]: `%${status}%` } } : null;
             const { limit, offset } = this.getPagination(page, size);
@@ -78,6 +78,8 @@ export default class ReportController extends BaseController {
                 whereClauseStatusPart = { "status": "ACTIVE" };
                 addWhereClauseStatusPart = true;
             }
+            let districtFilter: any = {}
+            districtFilter = district && typeof district == 'string' && district !== 'All Districts' ? { district } : {}
             const mentorsResult = await mentor.findAll({
                 attributes: [
                     "full_name",
@@ -96,6 +98,7 @@ export default class ReportController extends BaseController {
                 },
                 include: [
                     {
+                        where: districtFilter,
                         model: organization,
                         attributes: [
                             "organization_code",
@@ -341,7 +344,7 @@ export default class ReportController extends BaseController {
     protected async notRegistered(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { quiz_survey_id } = req.params
-            const { page, size, role } = req.query;
+            const { page, size, role,district } = req.query;
             let condition = role ? { role: { [Op.eq]: role } } : null;
             const { limit, offset } = this.getPagination(page, size);
             const modelClass = await this.loadModel(this.model).catch(error => {
@@ -356,7 +359,9 @@ export default class ReportController extends BaseController {
                 whereClauseStatusPartLiteral = `status = "${paramStatus}"`
                 addWhereClauseStatusPart = true;
             }
-            const mentorsResult = await db.query("SELECT * FROM organizations WHERE NOT EXISTS(SELECT mentors.organization_code  from mentors WHERE organizations.organization_code = mentors.organization_code) ", { type: QueryTypes.SELECT });
+            let districtFilter: any = {}
+            districtFilter = district && typeof district == 'string' && district !== 'All Districts' ? `'${district}'` : `'%%'`
+            const mentorsResult = await db.query(`SELECT * FROM organizations WHERE district LIKE ${districtFilter} && NOT EXISTS(SELECT mentors.organization_code  from mentors WHERE organizations.organization_code = mentors.organization_code) `, { type: QueryTypes.SELECT });
             if (!mentorsResult) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
