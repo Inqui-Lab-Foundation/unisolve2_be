@@ -62,6 +62,15 @@ export default class DashboardController extends BaseController {
         this.router.get(`${this.path}/loggedInUserCount`, this.getLoggedInUserCount.bind(this));
         //quizscore
         this.router.get(`${this.path}/quizscores`,this.getUserQuizScores.bind(this));
+        //singledashboard mentor api's 
+        this.router.get(`${this.path}/ideaCount`,this.getideaCount.bind(this));
+        this.router.get(`${this.path}/mentorpercentage`,this.getmentorpercentage.bind(this));
+        //singledashboard common api's 
+        this.router.get(`${this.path}/teamCount`,this.getteamCount.bind(this));
+        this.router.get(`${this.path}/studentCount`,this.getstudentCount.bind(this));
+        //singledashboard admin api's
+        this.router.get(`${this.path}/studentCourseCount`,this.getstudentCourseCount.bind(this));
+       
 
         super.initializeRoutes();
     }
@@ -734,5 +743,99 @@ export default class DashboardController extends BaseController {
             next(err)
         }
     }
+    protected async getteamCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const {mentor_id} = req.query
+            if(mentor_id){
+                result = await db.query(`SELECT count(*) as teams_count FROM teams where mentor_id = ${mentor_id}`,{ type: QueryTypes.SELECT });
+            }
+            else{
+                result = await db.query(`SELECT count(*) as teams_count FROM teams`,{ type: QueryTypes.SELECT });
+
+            }
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getstudentCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const {mentor_id} = req.query
+            if(mentor_id){
+                result = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${mentor_id};`,{ type: QueryTypes.SELECT });
+            }
+            else{
+                result = await db.query(`SELECT count(*) as student_count FROM students;`,{ type: QueryTypes.SELECT });
+
+            }
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getideaCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const {mentor_id} = req.query
+            if(mentor_id){
+                result = await db.query(`SELECT count(*) as idea_count FROM challenge_responses join teams on challenge_responses.team_id = teams.team_id where mentor_id = ${mentor_id} && challenge_responses.status = 'SUBMITTED';`,{ type: QueryTypes.SELECT });
+            }
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getmentorpercentage(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const {user_id} = req.query
+            if(user_id){
+                const currentProgress = await db.query(`SELECT count(*) as course_completed_count FROM mentor_topic_progress where user_id = ${user_id};`,{ type: QueryTypes.SELECT });
+                result['currentProgress'] = Object.values(currentProgress[0]).toString()
+                result['totalProgress'] = baseConfig.MENTOR_COURSE
+            }
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+
+    protected async getstudentCourseCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+                
+            const fullcompleted = await db.query(`SELECT count(*) as totalCount FROM user_topic_progress where course_topic_id = 35;`,{ type: QueryTypes.SELECT });
+            const started = await db.query(`select count(DISTINCT user_id) FROM user_topic_progress;`,{ type: QueryTypes.SELECT });
+            result['fullcompleted'] = Object.values(fullcompleted[0]).toString()
+            result['started'] = Object.values(started[0]).toString()
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    // protected async getteamCount____(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    //     try{
+    //         let result :any = {};
+    //         const {mentor_id} = req.query
+    //         if(mentor_id){
+    //             result = await db.query(``,{ type: QueryTypes.SELECT });
+    //         }
+    //         else{
+    //             result = await db.query(``,{ type: QueryTypes.SELECT });
+
+    //         }
+    //         res.status(200).send(dispatcher(res,result,'done'))
+    //     }
+    //     catch(err){
+    //         next(err)
+    //     }
+    // }
     
 };
