@@ -596,12 +596,14 @@ export default class MentorController extends BaseController {
             if (!mobile) {
                 throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
             }
-            console.log(mobile);
-            const message = `hello 123 testing`;
-            const url = `https://veup.versatilesmshub.com/api/sendsms.php?api=0a227d90ef8cd9f7b2361b33abb3f2c8&senderid=YFSITS&channel=Trans&DCS=0&flashsms=0&number=${mobile}&text=${encodeURIComponent(message)}&SmsCampaignId=1&EntityID=1701164847193907676&DLT_TE_ID=1507165035659644235`;
-            const result = await fetch(url);        
-            console.log("one",result);
-            return res.status(202).send(dispatcher(res, result, 'accepted', speeches.OTP_SEND, 202));
+            const result = await this.authService.otptestcall(req.body);
+            console.log(result);
+            if (result.error) {
+                return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
+            } else {
+                return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.OTP_SEND, 202));
+            }
+            
         } catch (error) {
             next(error)
         }
