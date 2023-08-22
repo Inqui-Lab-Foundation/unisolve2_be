@@ -53,6 +53,7 @@ export default class MentorController extends BaseController {
         this.router.get(`${this.path}/regStatus`, this.getMentorRegStatus.bind(this));
         this.router.post(`${this.path}/bulkUpload`, this.bulkUpload.bind(this));
         this.router.post(`${this.path}/mobileOtp`,this.mobileOpt.bind(this))
+        this.router.post(`${this.path}/Otptest`,this.Otptest.bind(this))
 
         super.initializeRoutes();
     }
@@ -217,7 +218,8 @@ export default class MentorController extends BaseController {
                             "city",
                             "district",
                             "state",
-                            "country"
+                            "country",
+                            "category"
                         ]
                     },
                 });
@@ -250,7 +252,8 @@ export default class MentorController extends BaseController {
                                 "organization_code",
                                 "organization_name",
                                 "organization_id",
-                                "district"
+                                "district",
+                                "category"
                             ], where: whereClauseOfDistrict,
                             require: false
                         }, limit, offset
@@ -583,6 +586,24 @@ export default class MentorController extends BaseController {
             } else {
                 return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.OTP_SEND, 202));
             }
+        } catch (error) {
+            next(error)
+        }
+    }
+    private async Otptest(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const { mobile } = req.body;
+            if (!mobile) {
+                throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
+            }
+            const result = await this.authService.otptestcall(req.body);
+            console.log(result);
+            if (result.error) {
+                return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
+            } else {
+                return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.OTP_SEND, 202));
+            }
+            
         } catch (error) {
             next(error)
         }
