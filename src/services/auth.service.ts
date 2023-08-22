@@ -792,7 +792,10 @@ export default class authService {
         let result: any = {};
         try {
             console.log('two',requestBody.mobile);
-            const message = `hello 123 testing`;
+            const message = `Hello "ram",
+			Log in to www.youthforsocialimpact.com to complete the e-learning course which will lead you to further stages of taking the assessment and completing the idea submission. For any query or issue, write to us at contact@youthforsocialimpact.in. Ignore if completed.
+			All the best!
+			Team YFSI.`;
             const url = `https://veup.versatilesmshub.com/api/sendsms.php?api=0a227d90ef8cd9f7b2361b33abb3f2c8&senderid=YFSITS&channel=Trans&DCS=0&flashsms=0&number=${requestBody.mobile}&text=${encodeURIComponent(message)}&SmsCampaignId=1&EntityID=1701164847193907676&DLT_TE_ID=1507165035659644235`;
             const otp = await axios.get(url);
             console.log(otp,"otp");
