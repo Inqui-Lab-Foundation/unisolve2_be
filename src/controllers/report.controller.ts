@@ -83,11 +83,9 @@ export default class ReportController extends BaseController {
             const mentorsResult = await mentor.findAll({
                 attributes: [
                     "full_name",
+                    "gender",
                     "mobile",
-                    "created_by",
-                    "created_at",
-                    "updated_at",
-                    "updated_by"
+                    "whatapp_mobile",
                 ],
                 raw: true,
                 where: {
@@ -102,8 +100,12 @@ export default class ReportController extends BaseController {
                         model: organization,
                         attributes: [
                             "organization_code",
+                            "organization_name",
+                            "category",
                             "district",
-                            "organization_name"
+                            "city",
+                            "principal_name",
+                            "principal_mobile"
                         ]
                     },
                     {
@@ -361,7 +363,18 @@ export default class ReportController extends BaseController {
             }
             let districtFilter: any = {}
             districtFilter = district && typeof district == 'string' && district !== 'All Districts' ? `'${district}'` : `'%%'`
-            const mentorsResult = await db.query(`SELECT * FROM organizations WHERE district LIKE ${districtFilter} && NOT EXISTS(SELECT mentors.organization_code  from mentors WHERE organizations.organization_code = mentors.organization_code) `, { type: QueryTypes.SELECT });
+            const mentorsResult = await db.query(`SELECT 
+            organization_id,
+            organization_code,
+            organization_name,
+            district,
+            category,
+            city,
+            state,
+            country,
+            principal_name,
+            principal_mobile,
+            principal_email FROM organizations WHERE district LIKE ${districtFilter} && NOT EXISTS(SELECT mentors.organization_code  from mentors WHERE organizations.organization_code = mentors.organization_code) `, { type: QueryTypes.SELECT });
             if (!mentorsResult) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
