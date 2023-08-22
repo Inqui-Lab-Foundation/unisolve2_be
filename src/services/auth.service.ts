@@ -776,34 +776,34 @@ export default class authService {
             return result;
         }
     }
-    async triggerOtpMsgtest(mobile: any) {
-        try {
-            const message = `hello 123 testing`;
-            const url = `https://veup.versatilesmshub.com/api/sendsms.php?api=0a227d90ef8cd9f7b2361b33abb3f2c8&senderid=YFSITS&channel=Trans&DCS=0&flashsms=0&number=${mobile}&text=${encodeURIComponent(message)}&SmsCampaignId=1&EntityID=1701164847193907676&DLT_TE_ID=1507165035659644235`;
-            let otp
-                otp = await fetch(url);
-                console.log("333",otp);
-                return otp
-        } catch (error: any) {
-            return error
-        }
-    }
-    async otptestcall(requestBody: any) {
-        let result: any = {};
-        console.log('two',requestBody.mobile);
-        try {
-            const otp = await this.triggerOtpMsgtest(requestBody.mobile);
-            if (otp instanceof Error) {
-                throw otp;
-            }
-            result.data = otp
-            console.log(result.data,"two");
-            return result;
-        } catch (error) {
-            result['error'] = error;
-            return result;
-        }
-    }
+    // async triggerOtpMsgtest(mobile: any) {
+    //     try {
+    //         const message = `hello 123 testing`;
+    //         const url = `https://veup.versatilesmshub.com/api/sendsms.php?api=0a227d90ef8cd9f7b2361b33abb3f2c8&senderid=YFSITS&channel=Trans&DCS=0&flashsms=0&number=${mobile}&text=${encodeURIComponent(message)}&SmsCampaignId=1&EntityID=1701164847193907676&DLT_TE_ID=1507165035659644235`;
+    //         let otp
+    //             otp = await fetch(url);
+    //             console.log("333",otp);
+    //             return otp
+    //     } catch (error: any) {
+    //         return error
+    //     }
+    // }
+    // async otptestcall(requestBody: any) {
+    //     let result: any = {};
+    //     console.log('two',requestBody.mobile);
+    //     try {
+    //         const otp = await this.triggerOtpMsgtest(requestBody.mobile);
+    //         if (otp instanceof Error) {
+    //             throw otp;
+    //         }
+    //         result.data = otp
+    //         console.log(result.data,"two");
+    //         return result;
+    //     } catch (error) {
+    //         result['error'] = error;
+    //         return result;
+    //     }
+    // }
     /**
      * Get the mentor details with the mobile number, trigger OTP and update the password
      * @param requestBody 
