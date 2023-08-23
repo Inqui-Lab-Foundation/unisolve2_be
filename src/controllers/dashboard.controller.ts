@@ -70,7 +70,10 @@ export default class DashboardController extends BaseController {
         this.router.get(`${this.path}/studentCount`,this.getstudentCount.bind(this));
         //singledashboard admin api's
         this.router.get(`${this.path}/studentCourseCount`,this.getstudentCourseCount.bind(this));
-       
+        this.router.get(`${this.path}/ideasCount`,this.getideasCount.bind(this));
+        this.router.get(`${this.path}/mentorCount`,this.getmentorCount.bind(this));
+        this.router.get(`${this.path}/studentCountbygender`,this.getstudentCountbygender.bind(this));
+        this.router.get(`${this.path}/schoolCount`,this.getSchoolCount.bind(this));
 
         super.initializeRoutes();
     }
@@ -810,7 +813,7 @@ export default class DashboardController extends BaseController {
         try{
             let result :any = {};
                 
-            const fullcompleted = await db.query(`SELECT count(*) as totalCount FROM user_topic_progress where course_topic_id = 35;`,{ type: QueryTypes.SELECT });
+            const fullcompleted = await db.query(`SELECT count(*) as totalCount FROM user_topic_progress where course_topic_id = 34;`,{ type: QueryTypes.SELECT });
             const started = await db.query(`select count(DISTINCT user_id) FROM user_topic_progress;`,{ type: QueryTypes.SELECT });
             result['fullcompleted'] = Object.values(fullcompleted[0]).toString()
             result['started'] = Object.values(started[0]).toString()
@@ -820,22 +823,55 @@ export default class DashboardController extends BaseController {
             next(err)
         }
     }
-    // protected async getteamCount____(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-    //     try{
-    //         let result :any = {};
-    //         const {mentor_id} = req.query
-    //         if(mentor_id){
-    //             result = await db.query(``,{ type: QueryTypes.SELECT });
-    //         }
-    //         else{
-    //             result = await db.query(``,{ type: QueryTypes.SELECT });
-
-    //         }
-    //         res.status(200).send(dispatcher(res,result,'done'))
-    //     }
-    //     catch(err){
-    //         next(err)
-    //     }
-    // }
+    protected async getideasCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            
+            const fullCount = await db.query(`SELECT count(*) as initiated_ideas FROM challenge_responses;`,{ type: QueryTypes.SELECT });
+            const submittedCount = await db.query(`SELECT count(*) as submitted FROM challenge_responses where status = 'SUBMITTED';`,{ type: QueryTypes.SELECT })
+            result['initiated_ideas'] = Object.values(fullCount[0]).toString() 
+            result['submitted_ideas'] = Object.values(submittedCount[0]).toString() 
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
     
+    protected async getmentorCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const mentorCount = await db.query(`SELECT count(*) FROM mentors;`,{ type: QueryTypes.SELECT });
+            const mentorMale = await db.query(`SELECT count(*) FROM mentors where gender = 'Male';`,{ type: QueryTypes.SELECT })
+            result['mentorCount'] = Object.values(mentorCount[0]).toString() 
+            result['mentorMale'] = Object.values(mentorMale[0]).toString()  
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getstudentCountbygender(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const studentMale = await db.query(`SELECT count(*) FROM students where Gender = 'MALE';`,{ type: QueryTypes.SELECT })
+            const studentFemale = await db.query(`SELECT count(*) FROM students where Gender = 'FEMALE';`,{ type: QueryTypes.SELECT }) 
+            result['studentMale'] = Object.values(studentMale[0]).toString() 
+            result['studentFemale'] = Object.values(studentFemale[0]).toString() 
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getSchoolCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+           result = await db.query(`SELECT count(*) as schoolCount FROM organizations;`,{ type: QueryTypes.SELECT })
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
 };
