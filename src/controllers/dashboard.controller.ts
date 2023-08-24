@@ -74,6 +74,7 @@ export default class DashboardController extends BaseController {
         this.router.get(`${this.path}/mentorCount`,this.getmentorCount.bind(this));
         this.router.get(`${this.path}/studentCountbygender`,this.getstudentCountbygender.bind(this));
         this.router.get(`${this.path}/schoolCount`,this.getSchoolCount.bind(this));
+        this.router.get(`${this.path}/mentorCourseCount`,this.getmentorCourseCount.bind(this));
 
         super.initializeRoutes();
     }
@@ -813,9 +814,9 @@ export default class DashboardController extends BaseController {
         try{
             let result :any = {};
                 
-            const fullcompleted = await db.query(`SELECT count(*) as totalCount FROM user_topic_progress where course_topic_id = 34;`,{ type: QueryTypes.SELECT });
+            const StudentCoursesCompletedCount = await db.query(`select count(*) as StudentCoursesCompletedCount from (SELECT count(*) FROM user_topic_progress group by user_id having count(*)>=34) as total;`,{ type: QueryTypes.SELECT });
             const started = await db.query(`select count(DISTINCT user_id) FROM user_topic_progress;`,{ type: QueryTypes.SELECT });
-            result['fullcompleted'] = Object.values(fullcompleted[0]).toString()
+            result['StudentCoursesCompletedCount'] = Object.values(StudentCoursesCompletedCount[0]).toString()
             result['started'] = Object.values(started[0]).toString()
             res.status(200).send(dispatcher(res,result,'done'))
         }
@@ -874,4 +875,15 @@ export default class DashboardController extends BaseController {
             next(err)
         }
     }
+    protected async getmentorCourseCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+           result = await db.query(`select count(*) as mentorCoursesCompletedCount from  (SELECT count(*)  from mentor_topic_progress group by user_id having  count(*)>=8) as total;`,{ type: QueryTypes.SELECT })
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    
 };
