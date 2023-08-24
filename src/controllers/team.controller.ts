@@ -29,6 +29,8 @@ export default class TeamController extends BaseController {
         //example route to add 
         this.router.get(`${this.path}/:id/members`, this.getTeamMembers.bind(this));
         this.router.get(`${this.path}/list`, this.getTeamsByMenter.bind(this));
+        this.router.get(`${this.path}/namebymenterid`, this.getNameByMenter.bind(this));
+        this.router.get(`${this.path}/listwithideaStatus`, this.getteamslistwithideastatus.bind(this));
         super.initializeRoutes();
     }
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
@@ -369,22 +371,39 @@ export default class TeamController extends BaseController {
     protected async getTeamsByMenter(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try{
             const mentorId = req.query.mentor_id;
-            const result  = await db.query(`SELECT 
-            teams.team_id,
-            team_name,
-            mentor_id,
-            COUNT(teams.team_id) AS StudentCount
-        FROM
-            teams
-                JOIN
-            students ON teams.team_id = students.team_id
-        WHERE
-            mentor_id = ${mentorId}
-                AND students.status = 'ACTIVE'
-        GROUP BY teams.team_id;`,{ type: QueryTypes.SELECT });
+            const result  = await db.query(`SELECT teams.team_id, team_name, COUNT(students.team_id) as StudentCount FROM teams left JOIN students ON teams.team_id = students.team_id where mentor_id = ${mentorId} GROUP BY teams.team_id order by team_id desc`,{ type: QueryTypes.SELECT });
             res.status(200).send(dispatcher(res, result, "success"))
         }catch (error) {
             next(error);
         }
     }
+    protected async getNameByMenter(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            const mentorId = req.query.mentor_id;
+            const result  = await db.query(`SELECT team_id,team_name FROM teams where mentor_id = ${mentorId} order by team_id desc;`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res, result, "success"))
+        }catch (error) {
+            next(error);
+        }
+    }
+    protected async getteamslistwithideastatus(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            const mentorId = req.query.mentor_id;
+            const result  = await db.query(`SELECT teams.team_id,team_name,COUNT(teams.team_id) AS StudentCount,challenge_responses.status AS ideaStatus
+            FROM
+                teams
+                    LEFT JOIN
+                students ON teams.team_id = students.team_id
+                    LEFT JOIN
+                challenge_responses ON teams.team_id = challenge_responses.team_id
+            WHERE
+                mentor_id = ${mentorId}
+            GROUP BY teams.team_id;`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res, result, "success"))
+        }catch (error) {
+            next(error);
+        }
+    }
+    
+    
 }

@@ -54,6 +54,7 @@ export default class ChallengeResponsesController extends BaseController {
         this.router.get(`${this.path}/districtWiseRating/`, this.districtWiseRating.bind(this));
         this.router.get(`${this.path}/evaluationResult/`, this.evaluationResult.bind(this));
         this.router.get(`${this.path}/finalEvaluation/`, this.finalEvaluation.bind(this));
+        this.router.get(`${this.path}/ideastatusbyteamId`, this.getideastatusbyteamid.bind(this));
         super.initializeRoutes();
     }
 
@@ -1661,4 +1662,14 @@ export default class ChallengeResponsesController extends BaseController {
     private async districtWiseRating(req: Request, res: Response, next: NextFunction) {
         return 'nothing'
     }
+    protected async getideastatusbyteamid(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            const teamId = req.query.team_id;
+            const result  = await db.query(`select  ifnull((select status  FROM challenge_responses where team_id = ${teamId}),'No Idea')ideaStatus`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res, result, "success"))
+        }catch (error) {
+            next(error);
+        }
+    }
+    
 } 
