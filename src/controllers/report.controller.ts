@@ -48,6 +48,9 @@ export default class ReportController extends BaseController {
         this.router.get(this.path + "/mentorstudentSurveyCount", this.mentorstudentSurveyCount.bind(this));
         this.router.get(this.path + "/mentordeatilscsv", this.mentordeatilscsv.bind(this));
         this.router.get(this.path + "/mentorsummary", this.mentorsummary.bind(this));
+        this.router.get(`${this.path}/mentorSurvey`, this.getmentorSurvey.bind(this));
+        this.router.get(`${this.path}/studentSurvey`, this.getstudentSurvey.bind(this));
+        this.router.get(`${this.path}/studentdetailsreport`, this.getstudentDetailsreport.bind(this));
         
         // super.initializeRoutes();
     }
@@ -55,7 +58,7 @@ export default class ReportController extends BaseController {
     protected async getMentorRegList(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { quiz_survey_id } = req.params
-            const { page, size, status ,district} = req.query;
+            const { page, size, status ,district,category} = req.query;
             let condition = {}
             // condition = status ? { status: { [Op.like]: `%${status}%` } } : null;
             const { limit, offset } = this.getPagination(page, size);
@@ -79,7 +82,15 @@ export default class ReportController extends BaseController {
                 addWhereClauseStatusPart = true;
             }
             let districtFilter: any = {}
-            districtFilter = district && typeof district == 'string' && district !== 'All Districts' ? { district } : {}
+            if(district !== 'All Districts' && category !== 'All Category'){
+                districtFilter = {category,district}
+            }else if(district !== 'All Districts'){
+                districtFilter = {district}
+            }else if(category !== 'All Category'){
+                districtFilter = {category}
+            }else{
+                districtFilter={}
+            }
             const mentorsResult = await mentor.findAll({
                 attributes: [
                     "full_name",
@@ -346,7 +357,7 @@ export default class ReportController extends BaseController {
     protected async notRegistered(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { quiz_survey_id } = req.params
-            const { page, size, role,district } = req.query;
+            const { page, size, role,district,category } = req.query;
             let condition = role ? { role: { [Op.eq]: role } } : null;
             const { limit, offset } = this.getPagination(page, size);
             const modelClass = await this.loadModel(this.model).catch(error => {
@@ -361,8 +372,22 @@ export default class ReportController extends BaseController {
                 whereClauseStatusPartLiteral = `status = "${paramStatus}"`
                 addWhereClauseStatusPart = true;
             }
-            let districtFilter: any = {}
-            districtFilter = district && typeof district == 'string' && district !== 'All Districts' ? `'${district}'` : `'%%'`
+            let districtFilter: any = ''
+            let categoryFilter:any = ''
+            if(district !== 'All Districts' && category !== 'All Categorys'){
+                districtFilter = `'${district}'`
+                categoryFilter = `'${category}'`
+            }else if(district !== 'All Districts'){
+                districtFilter = `'${district}'`
+                categoryFilter = `'%%'`
+            }else if(category !== 'All Categorys'){
+                categoryFilter = `'${category}'`
+                districtFilter = `'%%'`
+            }else{
+                districtFilter = `'%%'`
+                categoryFilter = `'%%'`
+            }
+            console.log(districtFilter,categoryFilter);
             const mentorsResult = await db.query(`SELECT 
             organization_id,
             organization_code,
@@ -374,7 +399,7 @@ export default class ReportController extends BaseController {
             country,
             principal_name,
             principal_mobile,
-            principal_email FROM organizations WHERE district LIKE ${districtFilter} && NOT EXISTS(SELECT mentors.organization_code  from mentors WHERE organizations.organization_code = mentors.organization_code) `, { type: QueryTypes.SELECT });
+            principal_email FROM organizations WHERE district LIKE ${districtFilter} && category LIKE ${categoryFilter} && NOT EXISTS(SELECT mentors.organization_code  from mentors WHERE organizations.organization_code = mentors.organization_code) `, { type: QueryTypes.SELECT });
             if (!mentorsResult) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -906,5 +931,164 @@ export default class ReportController extends BaseController {
             next(err)
         }
     }
+    protected async getmentorSurvey(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const id = req.query.id;
+            let data: any = {}
+            const summary = await db.query(`SELECT 
+            mn.organization_code AS 'UDISE Code',
+            og.organization_name AS 'School Name',
+            og.category AS Category,
+            og.district AS District,
+            og.city AS City,
+            og.principal_name AS 'HM Name',
+            og.principal_mobile AS 'HM Contact',
+            mn.full_name AS 'Name'
+        FROM
+            ((unisolve_db.quiz_survey_responses AS qz
+            INNER JOIN unisolve_db.mentors AS mn ON qz.user_id = mn.user_id
+                AND quiz_survey_id = ${id})
+            INNER JOIN unisolve_db.organizations AS og ON mn.organization_code = og.organization_code)
+        WHERE
+            og.status = 'ACTIVE';`, { type: QueryTypes.SELECT });
+            data=summary;
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
+    protected async getstudentSurvey(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const id = req.query.id;
+            let data: any = {}
+            const summary = await db.query(`SELECT 
+            mn.organization_code AS 'UDISE Code',
+            og.organization_name AS 'School Name',
+            og.category AS Category,
+            og.district AS District,
+            og.city AS City,
+            og.principal_name AS 'HM Name',
+            og.principal_mobile AS 'HM Contact',
+            st.full_name AS 'Name'
+        FROM
+            ((((unisolve_db.quiz_survey_responses AS qz
+            INNER JOIN unisolve_db.students AS st ON qz.user_id = st.user_id
+                AND quiz_survey_id = ${id})
+            INNER JOIN unisolve_db.teams AS t ON st.team_id = t.team_id)
+            INNER JOIN unisolve_db.mentors AS mn ON t.mentor_id = mn.mentor_id)
+            INNER JOIN unisolve_db.organizations AS og ON mn.organization_code = og.organization_code)
+        WHERE
+            og.status = 'ACTIVE'; `, { type: QueryTypes.SELECT });
+            data=summary;
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
+    protected async getstudentDetailsreport(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const {category,district} = req.query;
+            let data: any = {}
+            let districtFilter: any = ''
+            let categoryFilter:any = ''
+            if(district !== 'All Districts' && category !== 'All Categorys'){
+                districtFilter = `'${district}'`
+                categoryFilter = `'${category}'`
+            }else if(district !== 'All Districts'){
+                districtFilter = `'${district}'`
+                categoryFilter = `'%%'`
+            }else if(category !== 'All Categorys'){
+                categoryFilter = `'${category}'`
+                districtFilter = `'%%'`
+            }else{
+                districtFilter = `'%%'`
+                categoryFilter = `'%%'`
+            }
+            const summary = await db.query(`SELECT 
+            og.organization_code AS 'UDISE code',
+            og.organization_name AS 'School Name',
+            og.district,
+            og.category,
+            og.city,
+            og.principal_name AS 'HM Name',
+            og.principal_mobile AS 'HM Contact',
+            mn.full_name AS 'Teacher Name',
+            mn.gender AS 'Teacher Gender',
+            mn.mobile AS 'Teacher Contact',
+            mn.whatapp_mobile AS 'Teacher WhatsApp Contact',
+            t.team_name AS 'Team Name',
+            st.full_name AS 'Student Name',
+            (SELECT 
+                    username
+                FROM
+                    users
+                WHERE
+                    user_id = st.user_id) AS 'Student Username',
+            st.Age,
+            st.gender,
+            st.Grade,
+            IFNULL((SELECT 
+                            status
+                        FROM
+                            quiz_survey_responses
+                        WHERE
+                            quiz_survey_id = 2
+                                && user_id = st.user_id),
+                    'Not Started') AS 'Pre Survey Status',
+            IFNULL((SELECT 
+                            status
+                        FROM
+                            challenge_responses
+                        WHERE
+                            team_id = st.team_id),
+                    'Not Initiated') AS 'Idea Status',
+            (SELECT 
+                    COUNT(course_topic_id)
+                FROM
+                    user_topic_progress
+                WHERE
+                    user_id = st.user_id) AS course_status,
+            IFNULL((SELECT 
+                            status
+                        FROM
+                            quiz_survey_responses
+                        WHERE
+                            quiz_survey_id = 4
+                                && user_id = st.user_id),
+                    'Not Started') AS 'Post Survey Status'
+        FROM
+            ((((unisolve_db.students AS st)
+            INNER JOIN unisolve_db.teams AS t ON st.team_id = t.team_id)
+            INNER JOIN unisolve_db.mentors AS mn ON t.mentor_id = mn.mentor_id)
+            INNER JOIN unisolve_db.organizations AS og ON mn.organization_code = og.organization_code)
+        WHERE
+            og.status = 'ACTIVE'
+                && og.district like ${districtFilter}
+                && og.category like ${categoryFilter};`, { type: QueryTypes.SELECT });
+            data=summary;
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
+    
 }
 
