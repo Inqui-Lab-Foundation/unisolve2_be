@@ -51,6 +51,7 @@ export default class ReportController extends BaseController {
         this.router.get(`${this.path}/mentorSurvey`, this.getmentorSurvey.bind(this));
         this.router.get(`${this.path}/studentSurvey`, this.getstudentSurvey.bind(this));
         this.router.get(`${this.path}/studentdetailsreport`, this.getstudentDetailsreport.bind(this));
+        this.router.get(`${this.path}/mentordetailsreport`, this.getmentorDetailsreport.bind(this));
         
         // super.initializeRoutes();
     }
@@ -1073,6 +1074,155 @@ export default class ReportController extends BaseController {
             INNER JOIN unisolve_db.teams AS t ON st.team_id = t.team_id)
             INNER JOIN unisolve_db.mentors AS mn ON t.mentor_id = mn.mentor_id)
             INNER JOIN unisolve_db.organizations AS og ON mn.organization_code = og.organization_code)
+        WHERE
+            og.status = 'ACTIVE'
+                && og.district like ${districtFilter}
+                && og.category like ${categoryFilter};`, { type: QueryTypes.SELECT });
+            data=summary;
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
+    protected async getmentorDetailsreport(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const {category,district} = req.query;
+            let data: any = {}
+            let districtFilter: any = ''
+            let categoryFilter:any = ''
+            if(district !== 'All Districts' && category !== 'All Categorys'){
+                districtFilter = `'${district}'`
+                categoryFilter = `'${category}'`
+            }else if(district !== 'All Districts'){
+                districtFilter = `'${district}'`
+                categoryFilter = `'%%'`
+            }else if(category !== 'All Categorys'){
+                categoryFilter = `'${category}'`
+                districtFilter = `'%%'`
+            }else{
+                districtFilter = `'%%'`
+                categoryFilter = `'%%'`
+            }
+            const summary = await db.query(`SELECT 
+            og.organization_code AS 'UDISE code',
+            og.organization_name AS 'School Name',
+            og.district,
+            og.category,
+            og.city,
+            og.principal_name AS 'HM Name',
+            og.principal_mobile AS 'HM Contact',
+            mn.full_name AS 'Teacher Name',
+            mn.gender AS 'Teacher Gender',
+            mn.mobile AS 'Teacher Contact',
+            mn.whatapp_mobile AS 'Teacher WhatsApp Contact',
+            IFNULL((SELECT 
+                            CASE
+                                    WHEN status = 'ACTIVE' THEN 'Completed'
+                                END
+                        FROM
+                            quiz_survey_responses
+                        WHERE
+                            quiz_survey_id = 1
+                                && user_id = mn.user_id),
+                    'Not Started') AS 'Pre Survey Status',
+            (SELECT 
+                    CASE
+                            WHEN COUNT(mentor_course_topic_id) >= 9 THEN 'Completed'
+                            WHEN COUNT(mentor_course_topic_id) = 0 THEN 'Not Started'
+                            ELSE 'In Progress'
+                        END
+                FROM
+                    mentor_topic_progress
+                WHERE
+                    user_id = mn.user_id) AS 'Course Status',
+            IFNULL((SELECT 
+                            CASE
+                                    WHEN status = 'ACTIVE' THEN 'Completed'
+                                END
+                        FROM
+                            quiz_survey_responses
+                        WHERE
+                            quiz_survey_id = 3
+                                && user_id = mn.user_id),
+                    'Not Started') AS 'Post Survey Status',
+            (SELECT 
+                    COUNT(*)
+                FROM
+                    teams
+                WHERE
+                    mentor_id = mn.mentor_id) AS team_count,
+            (SELECT 
+                    COUNT(*)
+                FROM
+                    teams
+                        LEFT JOIN
+                    students ON teams.team_id = students.team_id
+                WHERE
+                    mentor_id = mn.mentor_id) AS student_count,
+            (SELECT 
+                    COUNT(*)
+                FROM
+                    teams
+                        LEFT JOIN
+                    students ON teams.team_id = students.team_id
+                        JOIN
+                    quiz_survey_responses ON students.user_id = quiz_survey_responses.user_id
+                WHERE
+                    mentor_id = mn.mentor_id) AS preSur_cmp,
+            (SELECT 
+                    COUNT(*)
+                FROM
+                    (SELECT 
+                        mentor_id, student_id, COUNT(*), students.user_id
+                    FROM
+                        teams
+                    LEFT JOIN students ON teams.team_id = students.team_id
+                    JOIN user_topic_progress ON students.user_id = user_topic_progress.user_id
+                    WHERE
+                        mentor_id = mn.mentor_id
+                    GROUP BY student_id
+                    HAVING COUNT(*) >= 34) AS total) AS countop,
+            (SELECT 
+                    COUNT(*)
+                FROM
+                    (SELECT 
+                        mentor_id, student_id, COUNT(*), students.user_id
+                    FROM
+                        teams
+                    LEFT JOIN students ON teams.team_id = students.team_id
+                    JOIN user_topic_progress ON students.user_id = user_topic_progress.user_id
+                    WHERE
+                        mentor_id = mn.mentor_id
+                    GROUP BY student_id
+                    HAVING COUNT(*) > 0 && COUNT(*) < 34) AS total) AS courseinprogess,
+            (SELECT 
+                    COUNT(*)
+                FROM
+                    teams
+                        LEFT JOIN
+                    challenge_responses ON teams.team_id = challenge_responses.team_id
+                WHERE
+                    mentor_id = mn.mentor_id
+                        AND challenge_responses.status = 'SUBMITTED') AS submittedcout,
+            (SELECT 
+                    COUNT(*)
+                FROM
+                    teams
+                        LEFT JOIN
+                    challenge_responses ON teams.team_id = challenge_responses.team_id
+                WHERE
+                    mentor_id = mn.mentor_id
+                        AND challenge_responses.status = 'DRAFT') AS draftcout
+        FROM
+            (mentors AS mn)
+                LEFT JOIN
+            organizations AS og ON mn.organization_code = og.organization_code
         WHERE
             og.status = 'ACTIVE'
                 && og.district like ${districtFilter}
