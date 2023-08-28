@@ -52,6 +52,7 @@ export default class ReportController extends BaseController {
         this.router.get(`${this.path}/studentSurvey`, this.getstudentSurvey.bind(this));
         this.router.get(`${this.path}/studentdetailsreport`, this.getstudentDetailsreport.bind(this));
         this.router.get(`${this.path}/mentordetailsreport`, this.getmentorDetailsreport.bind(this));
+        this.router.get(`${this.path}/mentordetailstable`, this.getmentorDetailstable.bind(this));
         
         // super.initializeRoutes();
     }
@@ -83,11 +84,11 @@ export default class ReportController extends BaseController {
                 addWhereClauseStatusPart = true;
             }
             let districtFilter: any = {}
-            if(district !== 'All Districts' && category !== 'All Category'){
+            if(district !== 'All Districts' && category !== 'All Categorys'){
                 districtFilter = {category,district}
             }else if(district !== 'All Districts'){
                 districtFilter = {district}
-            }else if(category !== 'All Category'){
+            }else if(category !== 'All Categorys'){
                 districtFilter = {category}
             }else{
                 districtFilter={}
@@ -1133,7 +1134,7 @@ export default class ReportController extends BaseController {
                     'Not Started') AS 'Pre Survey Status',
             (SELECT 
                     CASE
-                            WHEN COUNT(mentor_course_topic_id) >= 9 THEN 'Completed'
+                            WHEN COUNT(mentor_course_topic_id) >= 8 THEN 'Completed'
                             WHEN COUNT(mentor_course_topic_id) = 0 THEN 'Not Started'
                             ELSE 'In Progress'
                         END
@@ -1172,7 +1173,7 @@ export default class ReportController extends BaseController {
                         LEFT JOIN
                     students ON teams.team_id = students.team_id
                         JOIN
-                    quiz_survey_responses ON students.user_id = quiz_survey_responses.user_id
+                    quiz_survey_responses ON students.user_id = quiz_survey_responses.user_id and quiz_survey_id = 2
                 WHERE
                     mentor_id = mn.mentor_id) AS preSur_cmp,
             (SELECT 
@@ -1239,6 +1240,75 @@ export default class ReportController extends BaseController {
             next(err)
         }
     }
-    
+    protected async getmentorDetailstable(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            let data: any = {}
+            const summary = await db.query(`SELECT 
+            og.district,
+            COUNT(mn.mentor_id) AS totalReg,
+            COUNT(t.team_id) AS totalTeams,
+            COUNT(st.student_id) AS totalstudent,
+            SUM(CASE
+                WHEN st.gender = 'MALE' THEN 1
+                ELSE 0
+            END) AS male,
+            SUM(CASE
+                WHEN st.gender = 'FEMALE' THEN 1
+                ELSE 0
+            END) AS female
+        FROM
+            organizations AS og
+                LEFT JOIN
+            mentors AS mn ON og.organization_code = mn.organization_code
+                LEFT JOIN
+            teams AS t ON mn.mentor_id = t.mentor_id
+                LEFT JOIN
+            students AS st ON st.team_id = t.team_id
+            where og.status = 'ACTIVE'
+        GROUP BY og.district;`, { type: QueryTypes.SELECT });
+        const courseCompleted = await db.query(`select district,count(*) as courseIN from (SELECT 
+            district,cou
+        FROM
+            unisolve_db.organizations AS og
+                LEFT JOIN
+            (SELECT 
+                organization_code, cou
+            FROM
+                unisolve_db.mentors AS mn
+            LEFT JOIN (SELECT 
+                user_id, COUNT(*) AS cou
+            FROM
+                unisolve_db.mentor_topic_progress
+            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code where og.status ='ACTIVE'
+        group by organization_id having cou<8) as final group by district;`, { type: QueryTypes.SELECT });
+        const courseINcompleted = await db.query(`select district,count(*) as courseCMP from (SELECT 
+            district,cou
+        FROM
+            unisolve_db.organizations AS og
+                LEFT JOIN
+            (SELECT 
+                organization_code, cou
+            FROM
+                unisolve_db.mentors AS mn
+            LEFT JOIN (SELECT 
+                user_id, COUNT(*) AS cou
+            FROM
+                unisolve_db.mentor_topic_progress
+            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code where og.status ='ACTIVE' 
+        group by organization_id having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
+            data['summary'] = summary;
+            data['courseCompleted'] = courseCompleted;
+            data['courseINcompleted'] = courseINcompleted;
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
 }
 
