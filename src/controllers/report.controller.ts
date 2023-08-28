@@ -1078,7 +1078,7 @@ export default class ReportController extends BaseController {
         WHERE
             og.status = 'ACTIVE'
                 && og.district like ${districtFilter}
-                && og.category like ${categoryFilter};`, { type: QueryTypes.SELECT });
+                && og.category like ${categoryFilter} order by district,mn.full_name,t.team_name,st.full_name;`, { type: QueryTypes.SELECT });
             data=summary;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
@@ -1227,7 +1227,7 @@ export default class ReportController extends BaseController {
         WHERE
             og.status = 'ACTIVE'
                 && og.district like ${districtFilter}
-                && og.category like ${categoryFilter};`, { type: QueryTypes.SELECT });
+                && og.category like ${categoryFilter} order by district;`, { type: QueryTypes.SELECT });
             data=summary;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
