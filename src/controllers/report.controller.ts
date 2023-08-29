@@ -1249,8 +1249,6 @@ export default class ReportController extends BaseController {
             organizations AS og
                 LEFT JOIN
             mentors AS mn ON og.organization_code = mn.organization_code
-        WHERE
-            og.status = 'ACTIVE'
         GROUP BY og.district;`, { type: QueryTypes.SELECT });
         const teamCount = await db.query(`SELECT 
         og.district, COUNT(t.team_id) AS totalTeams
@@ -1260,8 +1258,7 @@ export default class ReportController extends BaseController {
         mentors AS mn ON og.organization_code = mn.organization_code
             INNER JOIN
         teams AS t ON mn.mentor_id = t.mentor_id
-        where og.status = 'ACTIVE'
-    GROUP BY og.district;`);
+    GROUP BY og.district;`,{ type: QueryTypes.SELECT });
         const studentCountDetails = await db.query(`SELECT 
         og.district,
         COUNT(st.student_id) AS totalstudent,
@@ -1280,8 +1277,8 @@ export default class ReportController extends BaseController {
             INNER JOIN
         teams AS t ON mn.mentor_id = t.mentor_id
             INNER JOIN
-        students AS st ON st.team_id = t.team_id where og.status = 'ACTIVE'
-    GROUP BY og.district;`);
+        students AS st ON st.team_id = t.team_id
+    GROUP BY og.district;`,{ type: QueryTypes.SELECT });
         const courseCompleted = await db.query(`select district,count(*) as courseIN from (SELECT 
             district,cou
         FROM
@@ -1295,7 +1292,7 @@ export default class ReportController extends BaseController {
                 user_id, COUNT(*) AS cou
             FROM
                 unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code where og.status ='ACTIVE'
+            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code
         group by organization_id having cou<8) as final group by district;`, { type: QueryTypes.SELECT });
         const courseINcompleted = await db.query(`select district,count(*) as courseCMP from (SELECT 
             district,cou
@@ -1310,7 +1307,7 @@ export default class ReportController extends BaseController {
                 user_id, COUNT(*) AS cou
             FROM
                 unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code where og.status ='ACTIVE' 
+            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code 
         group by organization_id having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
             data['teamCount'] = teamCount;
