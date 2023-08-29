@@ -53,6 +53,7 @@ export default class ReportController extends BaseController {
         this.router.get(`${this.path}/studentdetailsreport`, this.getstudentDetailsreport.bind(this));
         this.router.get(`${this.path}/mentordetailsreport`, this.getmentorDetailsreport.bind(this));
         this.router.get(`${this.path}/mentordetailstable`, this.getmentorDetailstable.bind(this));
+        this.router.get(`${this.path}/studentdetailstable`, this.getstudentDetailstable.bind(this));
         
         // super.initializeRoutes();
     }
@@ -1244,28 +1245,41 @@ export default class ReportController extends BaseController {
         try {
             let data: any = {}
             const summary = await db.query(`SELECT 
-            og.district,
-            COUNT(mn.mentor_id) AS totalReg,
-            COUNT(t.team_id) AS totalTeams,
-            COUNT(st.student_id) AS totalstudent,
-            SUM(CASE
-                WHEN st.gender = 'MALE' THEN 1
-                ELSE 0
-            END) AS male,
-            SUM(CASE
-                WHEN st.gender = 'FEMALE' THEN 1
-                ELSE 0
-            END) AS female
+            og.district, COUNT(mn.mentor_id) AS totalReg
         FROM
             organizations AS og
                 LEFT JOIN
             mentors AS mn ON og.organization_code = mn.organization_code
-                LEFT JOIN
-            teams AS t ON mn.mentor_id = t.mentor_id
-                LEFT JOIN
-            students AS st ON st.team_id = t.team_id
-            where og.status = 'ACTIVE'
         GROUP BY og.district;`, { type: QueryTypes.SELECT });
+        const teamCount = await db.query(`SELECT 
+        og.district, COUNT(t.team_id) AS totalTeams
+    FROM
+        organizations AS og
+            LEFT JOIN
+        mentors AS mn ON og.organization_code = mn.organization_code
+            INNER JOIN
+        teams AS t ON mn.mentor_id = t.mentor_id
+    GROUP BY og.district;`,{ type: QueryTypes.SELECT });
+        const studentCountDetails = await db.query(`SELECT 
+        og.district,
+        COUNT(st.student_id) AS totalstudent,
+        SUM(CASE
+            WHEN st.gender = 'MALE' THEN 1
+            ELSE 0
+        END) AS male,
+        SUM(CASE
+            WHEN st.gender = 'FEMALE' THEN 1
+            ELSE 0
+        END) AS female
+    FROM
+        organizations AS og
+            LEFT JOIN
+        mentors AS mn ON og.organization_code = mn.organization_code
+            INNER JOIN
+        teams AS t ON mn.mentor_id = t.mentor_id
+            INNER JOIN
+        students AS st ON st.team_id = t.team_id
+    GROUP BY og.district;`,{ type: QueryTypes.SELECT });
         const courseCompleted = await db.query(`select district,count(*) as courseIN from (SELECT 
             district,cou
         FROM
@@ -1279,7 +1293,7 @@ export default class ReportController extends BaseController {
                 user_id, COUNT(*) AS cou
             FROM
                 unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code where og.status ='ACTIVE'
+            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code
         group by organization_id having cou<8) as final group by district;`, { type: QueryTypes.SELECT });
         const courseINcompleted = await db.query(`select district,count(*) as courseCMP from (SELECT 
             district,cou
@@ -1294,11 +1308,118 @@ export default class ReportController extends BaseController {
                 user_id, COUNT(*) AS cou
             FROM
                 unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code where og.status ='ACTIVE' 
+            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code 
         group by organization_id having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
+            data['teamCount'] = teamCount;
+            data['studentCountDetails'] = studentCountDetails;
             data['courseCompleted'] = courseCompleted;
             data['courseINcompleted'] = courseINcompleted;
+            if (!data) {
+                throw notFound(speeches.DATA_NOT_FOUND)
+            }
+            if (data instanceof Error) {
+                throw data
+            }
+            res.status(200).send(dispatcher(res, data, "success"))
+        } catch (err) {
+            next(err)
+        }
+    }
+    protected async getstudentDetailstable(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            let data: any = {}
+            const summary = await db.query(`SELECT 
+            og.district, COUNT(t.team_id) AS totalTeams
+        FROM
+            organizations AS og
+                LEFT JOIN
+            mentors AS mn ON og.organization_code = mn.organization_code
+                LEFT JOIN
+            teams AS t ON mn.mentor_id = t.mentor_id
+        GROUP BY og.district;`, { type: QueryTypes.SELECT });
+            const studentCountDetails = await db.query(`SELECT 
+            og.district,
+            COUNT(st.student_id) AS totalstudent
+        FROM
+            organizations AS og
+                LEFT JOIN
+            mentors AS mn ON og.organization_code = mn.organization_code
+                INNER JOIN
+            teams AS t ON mn.mentor_id = t.mentor_id
+                INNER JOIN
+            students AS st ON st.team_id = t.team_id where og.status = 'ACTIVE'
+        GROUP BY og.district;`,{ type: QueryTypes.SELECT });
+            const courseCompleted = await db.query(`SELECT 
+            og.district,count(st.student_id) as studentCourseCMP
+        FROM
+            students AS st
+                JOIN
+            teams AS te ON st.team_id = te.team_id
+                JOIN
+            mentors AS mn ON te.mentor_id = mn.mentor_id
+                JOIN
+            organizations AS og ON mn.organization_code = og.organization_code
+                JOIN
+            (SELECT 
+                user_id, COUNT(*)
+            FROM
+                user_topic_progress
+            GROUP BY user_id
+            HAVING COUNT(*) >= 34) AS temp ON st.user_id = temp.user_id group by og.district`, { type: QueryTypes.SELECT });
+            const courseINprogesss = await db.query(`SELECT 
+            og.district,count(st.student_id) as studentCourseIN
+        FROM
+            students AS st
+                JOIN
+            teams AS te ON st.team_id = te.team_id
+                JOIN
+            mentors AS mn ON te.mentor_id = mn.mentor_id
+                JOIN
+            organizations AS og ON mn.organization_code = og.organization_code
+                JOIN
+            (SELECT 
+                user_id, COUNT(*)
+            FROM
+                user_topic_progress
+            GROUP BY user_id
+            HAVING COUNT(*) < 34) AS temp ON st.user_id = temp.user_id group by og.district`, { type: QueryTypes.SELECT });
+            const submittedCount = await db.query(`SELECT 
+            og.district,count(te.team_id) as submittedCount
+        FROM
+            teams AS te
+                JOIN
+            mentors AS mn ON te.mentor_id = mn.mentor_id
+                JOIN
+            organizations AS og ON mn.organization_code = og.organization_code
+                JOIN
+            (SELECT 
+                team_id, status
+            FROM
+                challenge_responses
+            WHERE
+                status = 'SUBMITTED') AS temp ON te.team_id = temp.team_id group by og.district`, { type: QueryTypes.SELECT });
+            const draftCount = await db.query(`SELECT 
+            og.district,count(te.team_id) as draftCount
+        FROM
+            teams AS te
+                JOIN
+            mentors AS mn ON te.mentor_id = mn.mentor_id
+                JOIN
+            organizations AS og ON mn.organization_code = og.organization_code
+                JOIN
+            (SELECT 
+                team_id, status
+            FROM
+                challenge_responses
+            WHERE
+                status = 'DRAFT') AS temp ON te.team_id = temp.team_id group by og.district`, { type: QueryTypes.SELECT });
+            data['summary'] = summary;
+            data['studentCountDetails'] = studentCountDetails;
+            data['courseCompleted'] = courseCompleted;
+            data['courseINprogesss'] = courseINprogesss;
+            data['submittedCount'] = submittedCount;
+            data['draftCount'] = draftCount;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
