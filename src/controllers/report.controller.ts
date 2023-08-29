@@ -1244,28 +1244,41 @@ export default class ReportController extends BaseController {
         try {
             let data: any = {}
             const summary = await db.query(`SELECT 
-            og.district,
-            COUNT(mn.mentor_id) AS totalReg,
-            COUNT(t.team_id) AS totalTeams,
-            COUNT(st.student_id) AS totalstudent,
-            SUM(CASE
-                WHEN st.gender = 'MALE' THEN 1
-                ELSE 0
-            END) AS male,
-            SUM(CASE
-                WHEN st.gender = 'FEMALE' THEN 1
-                ELSE 0
-            END) AS female
+            og.district, COUNT(mn.mentor_id) AS totalReg
         FROM
             organizations AS og
                 LEFT JOIN
             mentors AS mn ON og.organization_code = mn.organization_code
-                LEFT JOIN
-            teams AS t ON mn.mentor_id = t.mentor_id
-                LEFT JOIN
-            students AS st ON st.team_id = t.team_id
-            where og.status = 'ACTIVE'
         GROUP BY og.district;`, { type: QueryTypes.SELECT });
+        const teamCount = await db.query(`SELECT 
+        og.district, COUNT(t.team_id) AS totalTeams
+    FROM
+        organizations AS og
+            LEFT JOIN
+        mentors AS mn ON og.organization_code = mn.organization_code
+            INNER JOIN
+        teams AS t ON mn.mentor_id = t.mentor_id
+    GROUP BY og.district;`,{ type: QueryTypes.SELECT });
+        const studentCountDetails = await db.query(`SELECT 
+        og.district,
+        COUNT(st.student_id) AS totalstudent,
+        SUM(CASE
+            WHEN st.gender = 'MALE' THEN 1
+            ELSE 0
+        END) AS male,
+        SUM(CASE
+            WHEN st.gender = 'FEMALE' THEN 1
+            ELSE 0
+        END) AS female
+    FROM
+        organizations AS og
+            LEFT JOIN
+        mentors AS mn ON og.organization_code = mn.organization_code
+            INNER JOIN
+        teams AS t ON mn.mentor_id = t.mentor_id
+            INNER JOIN
+        students AS st ON st.team_id = t.team_id
+    GROUP BY og.district;`,{ type: QueryTypes.SELECT });
         const courseCompleted = await db.query(`select district,count(*) as courseIN from (SELECT 
             district,cou
         FROM
@@ -1279,7 +1292,7 @@ export default class ReportController extends BaseController {
                 user_id, COUNT(*) AS cou
             FROM
                 unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code where og.status ='ACTIVE'
+            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code
         group by organization_id having cou<8) as final group by district;`, { type: QueryTypes.SELECT });
         const courseINcompleted = await db.query(`select district,count(*) as courseCMP from (SELECT 
             district,cou
@@ -1294,9 +1307,11 @@ export default class ReportController extends BaseController {
                 user_id, COUNT(*) AS cou
             FROM
                 unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code where og.status ='ACTIVE' 
+            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code 
         group by organization_id having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
+            data['teamCount'] = teamCount;
+            data['studentCountDetails'] = studentCountDetails;
             data['courseCompleted'] = courseCompleted;
             data['courseINcompleted'] = courseINcompleted;
             if (!data) {
