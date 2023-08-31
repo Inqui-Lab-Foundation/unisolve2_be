@@ -14,7 +14,17 @@ export const translationSchema = Joi.object().keys({
     }),
     value: Joi.string().required().messages({
         'string.empty': speeches.ID_REQUIRED
+    }),
+    table_name: Joi.string().required().messages({
+        'string.empty': speeches.ID_REQUIRED
+    }),
+    coloumn_name: Joi.string().required().messages({
+        'string.empty': speeches.ID_REQUIRED
+    }),
+    index_no: Joi.string().required().messages({
+        'string.empty': speeches.ID_REQUIRED
     })
+
 });
 
 export const translationUpdateSchema = Joi.object().keys({

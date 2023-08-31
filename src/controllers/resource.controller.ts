@@ -24,6 +24,25 @@ export default class ResourceController extends BaseController {
         this.router.post(`${this.path}/resourceFileUpload`,this.handleAttachment.bind(this));
         super.initializeRoutes();
     }
+    protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let data:any
+            data=await this.crudService.findAll(resource,{
+                order:[['resource_id','DESC']]
+            })
+            if (!data || data instanceof Error) {
+                if (data != null) {
+                    throw notFound(data.message)
+                } else {
+                    throw notFound()
+                }
+            }
+            return res.status(200).send(dispatcher(res, data, 'success'));
+        }
+        catch(err){
+            next(err)
+        }
+    }
     protected async getMentorResources(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try{
             let data: any;
@@ -34,6 +53,7 @@ export default class ResourceController extends BaseController {
                 where: {
                     [Op.and]: [whereClauseRolePart]
                 },
+                order:[['resource_id','DESC']]
             });
             if (!data || data instanceof Error) {
                 if (data != null) {
