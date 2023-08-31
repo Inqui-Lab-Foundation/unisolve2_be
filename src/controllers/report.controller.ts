@@ -1164,7 +1164,7 @@ export default class ReportController extends BaseController {
                     COUNT(*)
                 FROM
                     teams
-                        LEFT JOIN
+                        JOIN
                     students ON teams.team_id = students.team_id
                 WHERE
                     mentor_id = mn.mentor_id) AS student_count,
@@ -1172,7 +1172,7 @@ export default class ReportController extends BaseController {
                     COUNT(*)
                 FROM
                     teams
-                        LEFT JOIN
+                        JOIN
                     students ON teams.team_id = students.team_id
                         JOIN
                     quiz_survey_responses ON students.user_id = quiz_survey_responses.user_id and quiz_survey_id = 2
@@ -1208,7 +1208,7 @@ export default class ReportController extends BaseController {
                     COUNT(*)
                 FROM
                     teams
-                        LEFT JOIN
+                        JOIN
                     challenge_responses ON teams.team_id = challenge_responses.team_id
                 WHERE
                     mentor_id = mn.mentor_id
@@ -1217,7 +1217,7 @@ export default class ReportController extends BaseController {
                     COUNT(*)
                 FROM
                     teams
-                        LEFT JOIN
+                        JOIN
                     challenge_responses ON teams.team_id = challenge_responses.team_id
                 WHERE
                     mentor_id = mn.mentor_id
