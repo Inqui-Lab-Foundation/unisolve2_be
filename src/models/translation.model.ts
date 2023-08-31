@@ -8,6 +8,9 @@ export class translation extends Model<InferAttributes<translation>, InferCreati
     declare translation_id: CreationOptional<number>;
     declare from_locale: string;
     declare to_locale: string;
+    declare table_name: string;
+    declare coloumn_name: string;
+    declare index_no: number;
     declare key: string;
     declare value: string;
     declare status: Enumerator;
@@ -30,6 +33,18 @@ export class translation extends Model<InferAttributes<translation>, InferCreati
         },
         to_locale: {
             type: DataTypes.STRING,
+            allowNull: false,
+        },
+        table_name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        coloumn_name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        index_no: {
+            type: DataTypes.INTEGER,
             allowNull: false,
         },
         key: {

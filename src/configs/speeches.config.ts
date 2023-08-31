@@ -109,6 +109,7 @@ export const speeches = {
     CSV_SEND_INTERNAL_ERROR: 'Something went wrong while create contact admin',
     CSV_DATA_EXIST: 'Data existing',
     DATA_EXIST: 'Data existed',
+    FAQ_ID:'faq ID is required.',
     FAQ_CATEGORY: "Category is required.",
     FAQ_ANSWER: "Answer is required.",
     ORG_CODE_REQUIRED: "Organization code is required.",

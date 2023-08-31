@@ -111,7 +111,7 @@ export default class OrganizationController extends BaseController {
             } else if (paramStatus === 'NOTACTIVE') {
                 whereClauseStatusPart = { status: { [Op.in]: ['INACTIVE', 'NEW'] } }
             } else {
-                whereClauseStatusPart = { "status": "ACTIVE" };
+                whereClauseStatusPart = { "status": ['ACTIVE', 'NEW'] };
                 whereClauseStatusPartLiteral = `status = "ACTIVE"`
                 addWhereClauseStatusPart = true;
             };
