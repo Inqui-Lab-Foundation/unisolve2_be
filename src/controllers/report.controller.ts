@@ -880,7 +880,10 @@ export default class ReportController extends BaseController {
     protected async mentorsummary(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             let data: any = {}
-            const summary = await db.query(`SELECT 
+            const district = req.query.district;
+            let summary 
+            if(district){
+                summary = await db.query(`SELECT 
                 org.district,
                 org.organization_count,
                 org.male_mentor_count,
@@ -890,7 +893,30 @@ export default class ReportController extends BaseController {
             FROM (
                 SELECT 
                     o.district,
-                    COUNT(o.organization_id) AS organization_count,
+                    COUNT(distinct o.organization_id) AS organization_count,
+                    SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
+                    SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
+                FROM
+                    organizations o
+                LEFT JOIN
+                    mentors m ON o.organization_code = m.organization_code
+                WHERE o.status='ACTIVE' && o.district= '${district}'
+                GROUP BY
+                    o.district
+            ) AS org ;`, { type: QueryTypes.SELECT });
+
+            }else{
+            summary = await db.query(`SELECT 
+                org.district,
+                org.organization_count,
+                org.male_mentor_count,
+                org.female_mentor_count,
+                org.male_mentor_count + org.female_mentor_count AS total_registered_teachers,
+                org.organization_count - (org.male_mentor_count + org.female_mentor_count) AS total_not_registered_teachers
+            FROM (
+                SELECT 
+                    o.district,
+                    COUNT(distinct o.organization_id) AS organization_count,
                     SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
                     SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
                 FROM
@@ -912,7 +938,7 @@ export default class ReportController extends BaseController {
             FROM (
                 SELECT 
                     o.district,
-                    COUNT(o.organization_id) AS organization_count,
+                    COUNT(distinct o.organization_id) AS organization_count,
                     SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
                     SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
                 FROM
@@ -923,6 +949,7 @@ export default class ReportController extends BaseController {
                 GROUP BY
                     o.district
             ) AS org;`, { type: QueryTypes.SELECT });
+            }
             data=summary;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
@@ -1245,13 +1272,18 @@ export default class ReportController extends BaseController {
     protected async getmentorDetailstable(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             let data: any = {}
+            const district = req.query.district;
+            let wherefilter = '';
+            if(district){
+                wherefilter = `&& og.district= '${district}'`;
+            }
             const summary = await db.query(`SELECT 
             og.district, COUNT(mn.mentor_id) AS totalReg
         FROM
             organizations AS og
                 LEFT JOIN
             mentors AS mn ON og.organization_code = mn.organization_code
-            WHERE og.status='ACTIVE'
+            WHERE og.status='ACTIVE' ${wherefilter}
         GROUP BY og.district;`, { type: QueryTypes.SELECT });
         const teamCount = await db.query(`SELECT 
         og.district, COUNT(t.team_id) AS totalTeams
@@ -1261,7 +1293,7 @@ export default class ReportController extends BaseController {
         mentors AS mn ON og.organization_code = mn.organization_code
             INNER JOIN
         teams AS t ON mn.mentor_id = t.mentor_id
-        WHERE og.status='ACTIVE'
+        WHERE og.status='ACTIVE' ${wherefilter}
     GROUP BY og.district;`,{ type: QueryTypes.SELECT });
         const studentCountDetails = await db.query(`SELECT 
         og.district,
@@ -1282,7 +1314,7 @@ export default class ReportController extends BaseController {
         teams AS t ON mn.mentor_id = t.mentor_id
             INNER JOIN
         students AS st ON st.team_id = t.team_id
-        WHERE og.status='ACTIVE'
+        WHERE og.status='ACTIVE' ${wherefilter}
     GROUP BY og.district;`,{ type: QueryTypes.SELECT });
         const courseINcompleted = await db.query(`select district,count(*) as courseIN from (SELECT 
             district,cou
@@ -1297,7 +1329,7 @@ export default class ReportController extends BaseController {
                 user_id, COUNT(*) AS cou
             FROM
                 unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE'
+            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE' ${wherefilter}
         group by organization_id having cou<8) as final group by district;`, { type: QueryTypes.SELECT });
         const courseCompleted= await db.query(`select district,count(*) as courseCMP from (SELECT 
             district,cou
@@ -1312,7 +1344,7 @@ export default class ReportController extends BaseController {
                 user_id, COUNT(*) AS cou
             FROM
                 unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE'
+            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE' ${wherefilter}
         group by organization_id having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
             data['teamCount'] = teamCount;
@@ -1333,6 +1365,11 @@ export default class ReportController extends BaseController {
     protected async getstudentDetailstable(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             let data: any = {}
+            const district = req.query.district;
+            let wherefilter = '';
+            if(district){
+                wherefilter = `&& og.district= '${district}'`;
+            }
             const summary = await db.query(`SELECT 
             og.district, COUNT(t.team_id) AS totalTeams
         FROM
@@ -1341,7 +1378,7 @@ export default class ReportController extends BaseController {
             mentors AS mn ON og.organization_code = mn.organization_code
                 LEFT JOIN
             teams AS t ON mn.mentor_id = t.mentor_id
-            WHERE og.status='ACTIVE'
+            WHERE og.status='ACTIVE' ${wherefilter}
         GROUP BY og.district;`, { type: QueryTypes.SELECT });
             const studentCountDetails = await db.query(`SELECT 
             og.district,
@@ -1353,7 +1390,7 @@ export default class ReportController extends BaseController {
                 INNER JOIN
             teams AS t ON mn.mentor_id = t.mentor_id
                 INNER JOIN
-            students AS st ON st.team_id = t.team_id where og.status = 'ACTIVE'
+            students AS st ON st.team_id = t.team_id where og.status = 'ACTIVE' ${wherefilter}
         GROUP BY og.district;`,{ type: QueryTypes.SELECT });
             const courseCompleted = await db.query(`SELECT 
             og.district,count(st.student_id) as studentCourseCMP
@@ -1371,7 +1408,7 @@ export default class ReportController extends BaseController {
             FROM
                 user_topic_progress
             GROUP BY user_id
-            HAVING COUNT(*) >= 34) AS temp ON st.user_id = temp.user_id WHERE og.status='ACTIVE' group by og.district`, { type: QueryTypes.SELECT });
+            HAVING COUNT(*) >= 34) AS temp ON st.user_id = temp.user_id WHERE og.status='ACTIVE' ${wherefilter} group by og.district`, { type: QueryTypes.SELECT });
             const courseINprogesss = await db.query(`SELECT 
             og.district,count(st.student_id) as studentCourseIN
         FROM
@@ -1388,7 +1425,7 @@ export default class ReportController extends BaseController {
             FROM
                 user_topic_progress
             GROUP BY user_id
-            HAVING COUNT(*) < 34) AS temp ON st.user_id = temp.user_id WHERE og.status='ACTIVE' group by og.district`, { type: QueryTypes.SELECT });
+            HAVING COUNT(*) < 34) AS temp ON st.user_id = temp.user_id WHERE og.status='ACTIVE' ${wherefilter} group by og.district`, { type: QueryTypes.SELECT });
             const submittedCount = await db.query(`SELECT 
             og.district,count(te.team_id) as submittedCount
         FROM
@@ -1403,7 +1440,7 @@ export default class ReportController extends BaseController {
             FROM
                 challenge_responses
             WHERE
-                status = 'SUBMITTED') AS temp ON te.team_id = temp.team_id WHERE og.status='ACTIVE' group by og.district`, { type: QueryTypes.SELECT });
+                status = 'SUBMITTED') AS temp ON te.team_id = temp.team_id WHERE og.status='ACTIVE' ${wherefilter} group by og.district`, { type: QueryTypes.SELECT });
             const draftCount = await db.query(`SELECT 
             og.district,count(te.team_id) as draftCount
         FROM
@@ -1418,7 +1455,7 @@ export default class ReportController extends BaseController {
             FROM
                 challenge_responses
             WHERE
-                status = 'DRAFT') AS temp ON te.team_id = temp.team_id WHERE og.status='ACTIVE' group by og.district`, { type: QueryTypes.SELECT });
+                status = 'DRAFT') AS temp ON te.team_id = temp.team_id WHERE og.status='ACTIVE' ${wherefilter} group by og.district`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
             data['studentCountDetails'] = studentCountDetails;
             data['courseCompleted'] = courseCompleted;
