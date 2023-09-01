@@ -893,7 +893,7 @@ export default class ReportController extends BaseController {
             FROM (
                 SELECT 
                     o.district,
-                    COUNT(o.organization_id) AS organization_count,
+                    COUNT(distinct o.organization_id) AS organization_count,
                     SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
                     SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
                 FROM
@@ -916,7 +916,7 @@ export default class ReportController extends BaseController {
             FROM (
                 SELECT 
                     o.district,
-                    COUNT(o.organization_id) AS organization_count,
+                    COUNT(distinct o.organization_id) AS organization_count,
                     SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
                     SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
                 FROM
@@ -938,7 +938,7 @@ export default class ReportController extends BaseController {
             FROM (
                 SELECT 
                     o.district,
-                    COUNT(o.organization_id) AS organization_count,
+                    COUNT(distinct o.organization_id) AS organization_count,
                     SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
                     SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
                 FROM
