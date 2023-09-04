@@ -40,7 +40,7 @@ export default class TeamController extends BaseController {
             if (model) {
                 this.model = model;
             };
-            const current_user = res.locals.user_id; 
+            const current_user = res.locals.user_id || res.locals.id;
             if(!current_user){
                 throw forbidden()
             }
