@@ -50,6 +50,12 @@ export default class SupportTicketController extends BaseController {
                 data = await this.crudService.findOne(modelClass, {
                     attributes: [
                         [
+                            db.literal(`(SELECT organization_code FROM mentors As s WHERE s.user_id = \`support_ticket\`.\`created_by\` )`), 'organization_code'
+                        ],
+                        [
+                            db.literal(`(SELECT o.district FROM organizations as o join mentors as m on o.organization_code = m.organization_code where user_id = \`support_ticket\`.\`created_by\` )`), 'district'
+                        ],
+                        [
                             db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`support_ticket\`.\`created_by\` )`), 'created_by'
                         ],
                         [
@@ -107,7 +113,14 @@ export default class SupportTicketController extends BaseController {
                             ],
                             [
                                 db.literal(`( SELECT COUNT(*) FROM support_tickets_replies AS s WHERE s.support_ticket_id = \`support_ticket\`.\`support_ticket_id\`)`), 'replies_count'
-                            ]
+                            ],
+                            [
+                                db.literal(`(SELECT organization_code FROM mentors As s WHERE s.user_id = \`support_ticket\`.\`created_by\` )`), 'organization_code'
+                            ],
+                            [
+                                db.literal(`(SELECT o.district FROM organizations as o join mentors as m on o.organization_code = m.organization_code where user_id = \`support_ticket\`.\`created_by\` )`), 'district'
+                            ],
+                            
                         ],
                         where: {
                             [Op.and]: [
