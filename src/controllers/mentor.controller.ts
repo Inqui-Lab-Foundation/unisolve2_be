@@ -52,9 +52,9 @@ export default class MentorController extends BaseController {
         this.router.put(`${this.path}/manualResetPassword`, this.manualResetPassword.bind(this));
         this.router.get(`${this.path}/regStatus`, this.getMentorRegStatus.bind(this));
         this.router.post(`${this.path}/bulkUpload`, this.bulkUpload.bind(this));
-        this.router.post(`${this.path}/mobileOtp`,this.mobileOpt.bind(this))
-        this.router.post(`${this.path}/Otptest`,this.Otptest.bind(this))
-
+        this.router.post(`${this.path}/mobileOtp`,this.mobileOpt.bind(this));
+        this.router.get(`${this.path}/mentorpdfdata`,this.mentorpdfdata.bind(this));
+    
         super.initializeRoutes();
     }
     protected async autoFillUserDataForBulkUpload(req: Request, res: Response, modelLoaded: any, reqData: any = null) {
@@ -590,24 +590,6 @@ export default class MentorController extends BaseController {
             next(error)
         }
     }
-    private async Otptest(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        try {
-            const { mobile } = req.body;
-            if (!mobile) {
-                throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
-            }
-            const result = await this.authService.otptestcall(req.body);
-            console.log(result);
-            if (result.error) {
-                return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
-            } else {
-                return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.OTP_SEND, 202));
-            }
-            
-        } catch (error) {
-            next(error)
-        }
-    }
     private async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const { mobile, organization_code, otp } = req.body;
@@ -732,6 +714,77 @@ export default class MentorController extends BaseController {
                 return res.status(400).send(dispatcher(res, { createdEntities: counter, existedEntities }, 'error', speeches.CSV_DATA_EXIST, 400));
             }
         });
+    }
+    protected async mentorpdfdata(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            console.log("czhj");
+            let data: any ={};
+            const { model} = req.params;
+            const id = req.query.id;
+            const user_id = req.query.user_id;
+            const paramStatus: any = req.query.status;
+            if (model) {
+                this.model = model;
+            };
+        
+            const modelClass = await this.loadModel(model).catch(error => {
+                next(error)
+            });
+            const where: any = {};
+            let whereClauseStatusPart: any = {};
+            let boolStatusWhereClauseRequired = false;
+            if (paramStatus && (paramStatus in constents.common_status_flags.list)) {
+                if (paramStatus === 'ALL') {
+                    whereClauseStatusPart = {};
+                    boolStatusWhereClauseRequired = false;
+                } else {
+                    whereClauseStatusPart = { "status": paramStatus };
+                    boolStatusWhereClauseRequired = true;
+                }
+            } else {
+                whereClauseStatusPart = { "status": "ACTIVE" };
+                boolStatusWhereClauseRequired = true;
+            };
+                where[`mentor_id`] = id;
+                data['mentorData'] = await this.crudService.findOne(modelClass, {
+                    where: {
+                        [Op.and]: [
+                            whereClauseStatusPart,
+                            where,
+                        ]
+                    },
+                    attributes:['mentor_id',
+                    "user_id",
+                    "full_name",
+                    "mobile"],
+                    include: {
+                        model: organization,
+                        attributes: [
+                            "organization_code",
+                            "organization_name",
+                            "district",
+                            "category"
+                        ]
+                    },
+                });
+                const currentProgress = await db.query(`SELECT count(*)as currentValue FROM unisolve_db.mentor_topic_progress where user_id = ${user_id}`,{ type: QueryTypes.SELECT })
+                data['currentProgress'] = Object.values(currentProgress[0]).toString();
+                data['totalProgress'] = baseConfig.MENTOR_COURSE
+                data['quizscores'] = await db.query(`SELECT score FROM unisolve_db.quiz_responses where user_id = ${user_id}`,{ type: QueryTypes.SELECT })
+                data['teamsCount'] = await db.query(`SELECT count(*) as teams_count FROM teams where mentor_id = ${id}`,{ type: QueryTypes.SELECT });
+                data['studentCount']= await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${id};`,{ type: QueryTypes.SELECT });
+                data['IdeaCount'] = await db.query(`SELECT count(*) as idea_count FROM challenge_responses join teams on challenge_responses.team_id = teams.team_id where mentor_id = ${id} && challenge_responses.status = 'SUBMITTED';`,{ type: QueryTypes.SELECT });
+            if (!data || data instanceof Error) {
+                if (data != null) {
+                    throw notFound(data.message)
+                } else {
+                    throw notFound()
+                }
+            }
+            return res.status(200).send(dispatcher(res, data, 'success'));
+        } catch (error) {
+            next(error);
+        }
     }
 };
 
