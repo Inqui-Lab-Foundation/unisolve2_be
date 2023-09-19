@@ -717,7 +717,6 @@ export default class MentorController extends BaseController {
     }
     protected async mentorpdfdata(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            console.log("czhj");
             let data: any ={};
             const { model} = req.params;
             const id = req.query.id;

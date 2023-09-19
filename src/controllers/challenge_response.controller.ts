@@ -55,6 +55,7 @@ export default class ChallengeResponsesController extends BaseController {
         this.router.get(`${this.path}/evaluationResult/`, this.evaluationResult.bind(this));
         this.router.get(`${this.path}/finalEvaluation/`, this.finalEvaluation.bind(this));
         this.router.get(`${this.path}/ideastatusbyteamId`, this.getideastatusbyteamid.bind(this));
+        this.router.get(`${this.path}/schoolpdfideastatus`,this.getSchoolPdfIdeaStatus.bind(this));
         super.initializeRoutes();
     }
 
@@ -1684,5 +1685,24 @@ export default class ChallengeResponsesController extends BaseController {
             next(error);
         }
     }
-    
+    protected async getSchoolPdfIdeaStatus(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            const result  = await db.query(`SELECT 
+            teams.team_id,
+            team_name,
+            ch.status AS ideaStatus,
+            ch.evaluation_status,
+            ch.final_result
+        FROM
+            teams
+                LEFT JOIN
+            challenge_responses AS ch ON teams.team_id = ch.team_id
+        WHERE
+            mentor_id = ${req.query.mentor_id}
+        GROUP BY teams.team_id;`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res, result, "success"))
+        }catch (error) {
+            next(error);
+        }
+    }
 } 
