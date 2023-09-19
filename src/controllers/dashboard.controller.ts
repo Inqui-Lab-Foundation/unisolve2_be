@@ -475,7 +475,7 @@ export default class DashboardController extends BaseController {
             if (studentStatsResul instanceof Error) {
                 throw studentStatsResul
             }
-            console.log(studentStatsResul)
+            //console.log(studentStatsResul)
             const badges = studentStatsResul.badges;
             let badgesCount = 0
             if (badges) {
