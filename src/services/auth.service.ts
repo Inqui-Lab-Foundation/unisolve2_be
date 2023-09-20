@@ -605,11 +605,11 @@ export default class authService {
      * @param mobile Number
      * @returns Number
      */
-    async triggerOtpMsg(mobile: any) {
+    async triggerOtpMsg(mobile: any,template_id:any) {
         try {
             let otp
             if(process.env.MOBILE_SMS_URl != ""){
-                otp = await axios.get(`${process.env.MOBILE_SMS_URl}${mobile}`)
+                otp = await axios.get(`${process.env.MOBILE_SMS_URl}${mobile}&template_id=${template_id}`)
                 return otp.data.otp;
             }
             else{
@@ -697,7 +697,7 @@ export default class authService {
                 return result;
             }
             const otp = await this.generateOtp();
-            const passwordNeedToBeUpdated: any = await this.triggerOtpMsg(requestBody.mobile);
+            const passwordNeedToBeUpdated: any = await this.triggerOtpMsg(requestBody.mobile,0);
             if (passwordNeedToBeUpdated instanceof Error) {
                 throw passwordNeedToBeUpdated;
             }
@@ -742,7 +742,7 @@ export default class authService {
                 return result;
             }
             const otp = await this.generateOtp();
-            const passwordNeedToBeUpdated = this.triggerOtpMsg(requestBody.mobile);
+            const passwordNeedToBeUpdated = this.triggerOtpMsg(requestBody.mobile,0);
             if (passwordNeedToBeUpdated instanceof Error) {
                 throw passwordNeedToBeUpdated;
             }
@@ -765,7 +765,7 @@ export default class authService {
     async mobileotp(requestBody: any) {
         let result: any = {};
         try {
-            const otp = await this.triggerOtpMsg(requestBody.mobile);
+            const otp = await this.triggerOtpMsg(requestBody.mobile,1);
             if (otp instanceof Error) {
                 throw otp;
             }
@@ -808,7 +808,7 @@ export default class authService {
                 passwordNeedToBeUpdated['otp'] = requestBody.organization_code;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
-                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile);
+                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile,2);
                 if (passwordNeedToBeUpdated instanceof Error) {
                     throw passwordNeedToBeUpdated;
                 }
