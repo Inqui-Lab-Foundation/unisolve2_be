@@ -435,6 +435,7 @@ export default class StudentController extends BaseController {
                 return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_REG_STATUS));
             }
             result.data['organization_name'] = mentorData.dataValues.organization.organization_name;
+            result.data['district'] = mentorData.dataValues.organization.district;
             return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
         }
     }

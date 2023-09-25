@@ -19,6 +19,7 @@ export const UpdateAnyFieldSchema = Joi.object().keys({
     evaluated_by: Joi.number().min(1),
     evaluated_at: Joi.any(),
     sdg: Joi.any(),
+    district: Joi.string(),
     others: Joi.any(),
     final_result: Joi.any(),
     initiated_by: Joi.any()
@@ -37,5 +38,6 @@ export const challengeResponsesSchema = Joi.object().keys({
         'string.empty': speeches.COMMON_STATUS_REQUIRED
     }),
     sdg: Joi.any(),
-    others: Joi.any()
+    others: Joi.any(),
+    district: Joi.string()
 });
