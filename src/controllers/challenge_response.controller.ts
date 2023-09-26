@@ -73,6 +73,7 @@ export default class ChallengeResponsesController extends BaseController {
         const district: any = req.query.district;
         const sdg: any = req.query.sdg;
         const rejected_reason: any = req.query.rejected_reason;
+        const rejected_reasonSecond: any = req.query.rejected_reasonSecond;
         const evaluator_id: any = req.query.evaluator_id;
         const level: any = req.query.level;
         const yetToProcessList: any = req.query.yetToProcessList;
@@ -115,8 +116,12 @@ export default class ChallengeResponsesController extends BaseController {
         if (sdg) {
             additionalFilter['sdg'] = sdg && typeof sdg == 'string' ? sdg : {}
         }
+        
         if (rejected_reason) {
             additionalFilter['rejected_reason'] = rejected_reason && typeof rejected_reason == 'string' ? rejected_reason : {}
+        }
+        if (rejected_reasonSecond) {
+            additionalFilter['rejected_reasonSecond'] = rejected_reasonSecond && typeof rejected_reasonSecond == 'string' ? rejected_reasonSecond : {}
         }
         if (evaluator_id) {
             additionalFilter['evaluated_by'] = evaluator_id && typeof evaluator_id == 'string' ? evaluator_id : {}
@@ -145,6 +150,7 @@ export default class ChallengeResponsesController extends BaseController {
                                     "evaluation_status",
                                     "status",
                                     "rejected_reason",
+                                    "rejected_reasonSecond",
                                     [
                                         db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
                                     ],
@@ -179,6 +185,7 @@ export default class ChallengeResponsesController extends BaseController {
                                     "evaluation_status",
                                     "status",
                                     "rejected_reason",
+                                    "rejected_reasonSecond",
                                     [
                                         db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
                                     ],
@@ -239,6 +246,7 @@ export default class ChallengeResponsesController extends BaseController {
                         "evaluation_status",
                         "status",
                         "rejected_reason",
+                        "rejected_reasonSecond",
                         [
                             db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
                         ],
@@ -290,6 +298,7 @@ export default class ChallengeResponsesController extends BaseController {
                                     "evaluation_status",
                                     "status",
                                     "rejected_reason",
+                                    "rejected_reasonSecond",
                                     "final_result", "district",
                                     [
                                         db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
@@ -355,6 +364,7 @@ export default class ChallengeResponsesController extends BaseController {
                                     "evaluation_status",
                                     "status",
                                     "rejected_reason",
+                                    "rejected_reasonSecond",
                                     "final_result", "district",
                                     [
                                         db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
@@ -451,6 +461,7 @@ export default class ChallengeResponsesController extends BaseController {
                             "evaluation_status",
                             "status",
                             "rejected_reason",
+                            "rejected_reasonSecond",
                             "final_result", "district",
                             [
                                 db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
@@ -524,22 +535,27 @@ export default class ChallengeResponsesController extends BaseController {
             let evaluator_user_id = req.query.evaluator_user_id;
             if (!evaluator_user_id) throw unauthorized(speeches.ID_REQUIRED);
 
+            let activeDistrict = await this.crudService.findOne(evaluation_process, {
+                attributes: ['district'], where: { [Op.and]: [{ status: 'ACTIVE' }, { level_name: 'L1' }] }
+            });
+            let districts = activeDistrict.dataValues.district;
+            const convertToDistrictArray = districts.split(",");
             const paramStatus: any = req.query.status;
             let boolStatusWhereClauseRequired = false;
 
             if (paramStatus && (paramStatus in constents.challenges_flags.list)) {
-                whereClauseStatusPart = { "status": paramStatus };
+                whereClauseStatusPart = { "status": paramStatus ,district : {[Op.in]: convertToDistrictArray} };
                 boolStatusWhereClauseRequired = true;
             } else {
-                whereClauseStatusPart = { "status": "SUBMITTED" };
+                whereClauseStatusPart = { "status": "SUBMITTED",district : {[Op.in]: convertToDistrictArray} };
                 boolStatusWhereClauseRequired = true;
             };
 
             evaluator_id = { evaluated_by: evaluator_user_id }
 
             let level = req.query.level;
-
             if (level && typeof level == 'string') {
+                let districtsArray = districts.replace(/,/g, "','")
                 switch (level) {
                     case 'L1':
                         attributesNeedFetch = [
@@ -558,7 +574,7 @@ export default class ChallengeResponsesController extends BaseController {
                                 'overAllIdeas'
                             ],
                             [
-                                db.literal(`( SELECT count(*) FROM challenge_responses as idea where idea.evaluation_status is null AND idea.status = 'SUBMITTED')`),
+                                db.literal(`( SELECT count(*) FROM challenge_responses as idea where idea.evaluation_status is null AND idea.status = 'SUBMITTED' AND idea.district IN ('${districtsArray}'))`),
                                 'openIdeas'
                             ],
                             [
@@ -1140,6 +1156,7 @@ export default class ChallengeResponsesController extends BaseController {
             const district: any = req.query.district;
             const sdg: any = req.query.sdg;
             const rejected_reason: any = req.query.rejected_reason;
+            const rejected_reasonSecond: any = req.query.rejected_reasonSecond;
             const level: any = req.query.level;
             if (!evaluator_id) {
                 throw badRequest(speeches.TEAM_NAME_ID)
@@ -1156,6 +1173,9 @@ export default class ChallengeResponsesController extends BaseController {
             }
             if (rejected_reason) {
                 additionalFilter['rejected_reason'] = rejected_reason && typeof rejected_reason == 'string' ? rejected_reason : {}
+            }
+            if (rejected_reasonSecond) {
+                additionalFilter['rejected_reasonSecond'] = rejected_reasonSecond && typeof rejected_reasonSecond == 'string' ? rejected_reasonSecond : {}
             }
             if (district) {
                 additionalFilter['district'] = district && typeof district == 'string' ? district : {}
@@ -1178,6 +1198,7 @@ export default class ChallengeResponsesController extends BaseController {
                                 "evaluation_status",
                                 "status",
                                 "rejected_reason",
+                                "rejected_reasonSecond",
                                 "final_result", "district",
                                 [
                                     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
@@ -1226,6 +1247,7 @@ export default class ChallengeResponsesController extends BaseController {
                                 "evaluation_status",
                                 "status",
                                 "rejected_reason",
+                                "rejected_reasonSecond",
                                 "final_result", "district",
                                 [
                                     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
@@ -1320,6 +1342,7 @@ export default class ChallengeResponsesController extends BaseController {
                     "evaluation_status",
                     "status",
                     "rejected_reason",
+                    "rejected_reasonSecond",
                     "final_result", "district",
                     [
                         db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
@@ -1421,6 +1444,7 @@ export default class ChallengeResponsesController extends BaseController {
                     "evaluation_status",
                     "status",
                     "rejected_reason",
+                    "rejected_reasonSecond",
                     "final_result", "district",
                     [
                         db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
@@ -1627,6 +1651,7 @@ export default class ChallengeResponsesController extends BaseController {
                             "evaluation_status",
                             "status",
                             "rejected_reason",
+                            "rejected_reasonSecond",
                             "final_result",
                             "district",
                             [
