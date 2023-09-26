@@ -104,9 +104,6 @@ export default class EvaluatorController extends BaseController {
         } else if (result.error) {
             return res.status(401).send(dispatcher(res, result.error, 'error', speeches.USER_RISTRICTED, 401));
         } else {
-            let getEvaluatorProcessLevel = await this.crudService.findOne(evaluation_process, { where: { status: "ACTIVE" } });
-            result.data["level_name"] = getEvaluatorProcessLevel.dataValues.level_name
-            result.data['eval_schema'] = getEvaluatorProcessLevel.dataValues.eval_schema;
             return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
         }
     }

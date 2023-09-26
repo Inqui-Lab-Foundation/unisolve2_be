@@ -7,7 +7,8 @@ export const challengeResponsesUpdateSchema = Joi.object().keys({
         'any.only': speeches.EVALUATOR_STATUS_INVALID,
         'string.empty': speeches.EVALUATOR_STATUS_REQUIRED
     }),
-    'rejected_reason': Joi.any()
+    'rejected_reason': Joi.any(),
+    'rejected_reasonSecond':Joi.any()
 });
 export const UpdateAnyFieldSchema = Joi.object().keys({
     status: Joi.string().valid(...Object.values(constents.challenges_flags.list)).messages({
