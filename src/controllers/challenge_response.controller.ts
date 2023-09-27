@@ -1042,7 +1042,8 @@ export default class ChallengeResponsesController extends BaseController {
                         "challenge_id",
                         "status",
                         "others",
-                        "evaluation_status"
+                        "evaluation_status",
+                        "final_result"
                     ],
                     where: {
                         [Op.and]: [
@@ -1098,7 +1099,8 @@ export default class ChallengeResponsesController extends BaseController {
                             "response",
                             "status",
                             "sdg",
-                            "evaluation_status"
+                            "evaluation_status",
+                            "final_result"
                         ],
                         limit, offset
                     })
