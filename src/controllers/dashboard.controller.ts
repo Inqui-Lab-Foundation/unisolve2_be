@@ -75,6 +75,7 @@ export default class DashboardController extends BaseController {
         this.router.get(`${this.path}/studentCountbygender`,this.getstudentCountbygender.bind(this));
         this.router.get(`${this.path}/schoolCount`,this.getSchoolCount.bind(this));
         this.router.get(`${this.path}/mentorCourseCount`,this.getmentorCourseCount.bind(this));
+        this.router.get(`${this.path}/schoolRegCount`,this.getschoolRegCount.bind(this));
 
         super.initializeRoutes();
     }
@@ -614,7 +615,7 @@ export default class DashboardController extends BaseController {
                 [
                     [db.fn('DISTINCT', db.col('district_name')), 'district_name'],
                     `dashboard_map_stat_id`,
-                    `overall_schools`, `reg_schools`, `schools_with_teams`, `teams`, `ideas`, `students`, `status`, `created_by`, `created_at`, `updated_by`, `updated_at`
+                    `overall_schools`, `reg_schools`,`reg_mentors`, `schools_with_teams`, `teams`, `ideas`, `students`, `status`, `created_by`, `created_at`, `updated_by`, `updated_at`
                 ]
             )
         } catch (error) {
@@ -996,6 +997,22 @@ export default class DashboardController extends BaseController {
             GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE'
         group by organization_id having cou>=8) as final`,{ type: QueryTypes.SELECT })
             res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getschoolRegCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            const mentorCount = await db.query(`SELECT 
+            COUNT(DISTINCT mn.organization_code) AS RegSchools
+        FROM
+            organizations AS og
+                LEFT JOIN
+            mentors AS mn ON og.organization_code = mn.organization_code
+        WHERE
+            og.status = 'ACTIVE';`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res,mentorCount,'done'))
         }
         catch(err){
             next(err)
