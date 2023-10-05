@@ -886,69 +886,87 @@ export default class ReportController extends BaseController {
                 summary = await db.query(`SELECT 
                 org.district,
                 org.organization_count,
+                org.uniqueRegSchools,
                 org.male_mentor_count,
                 org.female_mentor_count,
                 org.male_mentor_count + org.female_mentor_count AS total_registered_teachers,
-                org.organization_count - (org.male_mentor_count + org.female_mentor_count) AS total_not_registered_teachers
-            FROM (
-                SELECT 
+                org.organization_count - (org.uniqueRegSchools) AS total_not_registered_teachers
+            FROM
+                (SELECT 
                     o.district,
-                    COUNT(distinct o.organization_id) AS organization_count,
-                    SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
-                    SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
+                        COUNT(DISTINCT o.organization_id) AS organization_count,
+                        COUNT(DISTINCT m.organization_code) AS uniqueRegSchools,
+                        SUM(CASE
+                            WHEN m.gender = 'Male' THEN 1
+                            ELSE 0
+                        END) AS male_mentor_count,
+                        SUM(CASE
+                            WHEN m.gender = 'Female' THEN 1
+                            ELSE 0
+                        END) AS female_mentor_count
                 FROM
                     organizations o
-                LEFT JOIN
-                    mentors m ON o.organization_code = m.organization_code
-                WHERE o.status='ACTIVE' && o.district= '${district}'
-                GROUP BY
-                    o.district
-            ) AS org ;`, { type: QueryTypes.SELECT });
+                LEFT JOIN mentors m ON o.organization_code = m.organization_code
+                WHERE
+                    o.status = 'ACTIVE'
+                        && o.district = '${district}'
+                GROUP BY o.district) AS org;`, { type: QueryTypes.SELECT });
 
             }else{
             summary = await db.query(`SELECT 
-                org.district,
-                org.organization_count,
-                org.male_mentor_count,
-                org.female_mentor_count,
-                org.male_mentor_count + org.female_mentor_count AS total_registered_teachers,
-                org.organization_count - (org.male_mentor_count + org.female_mentor_count) AS total_not_registered_teachers
-            FROM (
-                SELECT 
-                    o.district,
-                    COUNT(distinct o.organization_id) AS organization_count,
-                    SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
-                    SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
-                FROM
-                    organizations o
-                LEFT JOIN
-                    mentors m ON o.organization_code = m.organization_code
-                WHERE o.status='ACTIVE'
-                GROUP BY
-                    o.district
-            ) AS org
-            UNION ALL
-            SELECT 
-                'Total',
-                SUM(organization_count),
-                SUM(male_mentor_count),
-                SUM(female_mentor_count),
-                SUM(male_mentor_count + female_mentor_count),
-                SUM(organization_count - (male_mentor_count + female_mentor_count))
-            FROM (
-                SELECT 
-                    o.district,
-                    COUNT(distinct o.organization_id) AS organization_count,
-                    SUM(CASE WHEN m.gender = 'Male' THEN 1 ELSE 0 END) AS male_mentor_count,
-                    SUM(CASE WHEN m.gender = 'Female' THEN 1 ELSE 0 END) AS female_mentor_count
-                FROM
-                    organizations o
-                LEFT JOIN
-                    mentors m ON o.organization_code = m.organization_code
-                WHERE o.status='ACTIVE'
-                GROUP BY
-                    o.district
-            ) AS org;`, { type: QueryTypes.SELECT });
+            org.district,
+            org.organization_count,
+            org.uniqueRegSchools,
+            org.male_mentor_count,
+            org.female_mentor_count,
+            org.male_mentor_count + org.female_mentor_count AS total_registered_teachers,
+            org.organization_count - (org.uniqueRegSchools) AS total_not_registered_teachers
+        FROM
+            (SELECT 
+                o.district,
+                    COUNT(DISTINCT o.organization_id) AS organization_count,
+                    COUNT(DISTINCT m.organization_code) AS uniqueRegSchools,
+                    SUM(CASE
+                        WHEN m.gender = 'Male' THEN 1
+                        ELSE 0
+                    END) AS male_mentor_count,
+                    SUM(CASE
+                        WHEN m.gender = 'Female' THEN 1
+                        ELSE 0
+                    END) AS female_mentor_count
+            FROM
+                organizations o
+            LEFT JOIN mentors m ON o.organization_code = m.organization_code
+            WHERE
+                o.status = 'ACTIVE'
+            GROUP BY o.district) AS org 
+        UNION ALL SELECT 
+            'Total',
+            SUM(organization_count),
+            SUM(uniqueRegSchools),
+            SUM(male_mentor_count),
+            SUM(female_mentor_count),
+            SUM(male_mentor_count + female_mentor_count),
+            SUM(organization_count - uniqueRegSchools)
+        FROM
+            (SELECT 
+                o.district,
+                    COUNT(DISTINCT o.organization_id) AS organization_count,
+                    COUNT(DISTINCT m.organization_code) AS uniqueRegSchools,
+                    SUM(CASE
+                        WHEN m.gender = 'Male' THEN 1
+                        ELSE 0
+                    END) AS male_mentor_count,
+                    SUM(CASE
+                        WHEN m.gender = 'Female' THEN 1
+                        ELSE 0
+                    END) AS female_mentor_count
+            FROM
+                organizations o
+            LEFT JOIN mentors m ON o.organization_code = m.organization_code
+            WHERE
+                o.status = 'ACTIVE'
+            GROUP BY o.district) AS org;`, { type: QueryTypes.SELECT });
             }
             data=summary;
             if (!data) {
@@ -1277,6 +1295,14 @@ export default class ReportController extends BaseController {
             if(district){
                 wherefilter = `&& og.district= '${district}'`;
             }
+            const Regschool = await db.query(`SELECT 
+            og.district, COUNT(DISTINCT mn.organization_code) AS totalRegSchools
+        FROM
+            organizations AS og
+                LEFT JOIN
+            mentors AS mn ON og.organization_code = mn.organization_code
+            WHERE og.status='ACTIVE' ${wherefilter}
+        GROUP BY og.district;`, { type: QueryTypes.SELECT });
             const summary = await db.query(`SELECT 
             og.district, COUNT(mn.mentor_id) AS totalReg
         FROM
@@ -1347,6 +1373,7 @@ export default class ReportController extends BaseController {
             GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE' ${wherefilter}
         group by organization_id having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
+            data['Regschool'] = Regschool;
             data['teamCount'] = teamCount;
             data['studentCountDetails'] = studentCountDetails;
             data['courseCompleted'] = courseCompleted;

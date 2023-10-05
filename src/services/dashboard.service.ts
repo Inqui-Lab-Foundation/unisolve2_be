@@ -34,6 +34,7 @@ export default class DashboardService extends BaseService {
                     bulkCreateArray.push({
                         overall_schools: stats.schoolIdsInDistrict.length,
                         reg_schools: stats.registeredSchoolIdsInDistrict.length,
+                        reg_mentors:stats.registeredMentorIdsInDistrict.length,
                         teams: stats.teamIdInDistrict.length,
                         ideas: stats.challengeInDistrict.length,
                         district_name: district.district,
@@ -50,6 +51,7 @@ export default class DashboardService extends BaseService {
             bulkCreateArray.push({
                 overall_schools: statsForAllDistrics.schoolIdsInDistrict.length,
                 reg_schools: statsForAllDistrics.registeredSchoolIdsInDistrict.length,
+                reg_mentors:statsForAllDistrics.registeredMentorIdsInDistrict.length,
                 teams: statsForAllDistrics.teamIdInDistrict.length,
                 ideas: statsForAllDistrics.challengeInDistrict.length,
                 district_name: "all",
@@ -76,6 +78,7 @@ export default class DashboardService extends BaseService {
             let schoolIdsInDistrict: any = [];
             let mentorIdInDistrict: any = [];
             let registeredSchoolIdsInDistrict: any = [];
+            let registeredMentorIdsInDistrict:any = [];
             let schoolIdsInDistrictWithTeams: any = [];
             let teamIdInDistrict: any = [];
             let challengeInDistrict: any = [];
@@ -99,6 +102,7 @@ export default class DashboardService extends BaseService {
                 return {
                     schoolIdsInDistrict: schoolIdsInDistrict,
                     registeredSchoolIdsInDistrict: registeredSchoolIdsInDistrict,
+                    registeredMentorIdsInDistrict:registeredMentorIdsInDistrict,
                     teamIdInDistrict: teamIdInDistrict,
                     challengeInDistrict: challengeInDistrict,
                     studentsInDistric: studentsInDistric,
@@ -116,6 +120,7 @@ export default class DashboardService extends BaseService {
                 return {
                     schoolIdsInDistrict: schoolIdsInDistrict,
                     registeredSchoolIdsInDistrict: registeredSchoolIdsInDistrict,
+                    registeredMentorIdsInDistrict:registeredMentorIdsInDistrict,
                     teamIdInDistrict: teamIdInDistrict,
                     challengeInDistrict: challengeInDistrict,
                     studentsInDistric: studentsInDistric,
@@ -137,6 +142,18 @@ export default class DashboardService extends BaseService {
                 registeredSchoolIdsInDistrict = schoolRegistered.map((Element: any) => Element.dataValues.organization_code);
             }
 
+            const mentorRegistered = await this.crudService.findAll(mentor, {
+                where: {
+                    mentor_id: mentorIdInDistrict,
+                    status: 'ACTIVE'
+                },
+                
+            });
+            if (!mentorRegistered || (!mentorRegistered.length) || mentorRegistered.length == 0) {
+                registeredMentorIdsInDistrict = []
+            } else {
+                registeredMentorIdsInDistrict = mentorRegistered.map((Element: any) => Element.dataValues.organization_code);
+            }
 
             const teamReg = await this.crudService.findAll(team, {
                 where: {
@@ -148,6 +165,7 @@ export default class DashboardService extends BaseService {
                 return {
                     schoolIdsInDistrict: schoolIdsInDistrict,
                     registeredSchoolIdsInDistrict: registeredSchoolIdsInDistrict,
+                    registeredMentorIdsInDistrict:registeredMentorIdsInDistrict,
                     teamIdInDistrict: teamIdInDistrict,
                     challengeInDistrict: challengeInDistrict,
                     studentsInDistric: studentsInDistric,
@@ -208,6 +226,7 @@ export default class DashboardService extends BaseService {
             return {
                 schoolIdsInDistrict: schoolIdsInDistrict,
                 registeredSchoolIdsInDistrict: registeredSchoolIdsInDistrict,
+                registeredMentorIdsInDistrict:registeredMentorIdsInDistrict,
                 teamIdInDistrict: teamIdInDistrict,
                 challengeInDistrict: challengeInDistrict,
                 studentsInDistric: studentsInDistric,

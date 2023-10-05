@@ -23,7 +23,7 @@ import StudentService from '../services/students.service';
 import { user } from '../models/user.model';
 import { object } from 'joi';
 import {baseConfig} from "../configs/base.config";
-
+import { badRequest } from 'boom';
 
 export default class DashboardController extends BaseController {
     model = ""; ///this u will override in every function in this controller ...!!!
@@ -75,6 +75,12 @@ export default class DashboardController extends BaseController {
         this.router.get(`${this.path}/studentCountbygender`,this.getstudentCountbygender.bind(this));
         this.router.get(`${this.path}/schoolCount`,this.getSchoolCount.bind(this));
         this.router.get(`${this.path}/mentorCourseCount`,this.getmentorCourseCount.bind(this));
+        this.router.get(`${this.path}/schoolRegCount`,this.getschoolRegCount.bind(this));
+
+        ///school dashboard 
+        this.router.get(`${this.path}/SchoolteamCount`,this.getSchoolteamCount.bind(this));
+        this.router.get(`${this.path}/SchoolStudentCount`,this.getSchoolStudentCount.bind(this));
+        this.router.get(`${this.path}/SchoolideaCount`,this.getSchoolideaCount.bind(this));
 
         super.initializeRoutes();
     }
@@ -614,7 +620,7 @@ export default class DashboardController extends BaseController {
                 [
                     [db.fn('DISTINCT', db.col('district_name')), 'district_name'],
                     `dashboard_map_stat_id`,
-                    `overall_schools`, `reg_schools`, `schools_with_teams`, `teams`, `ideas`, `students`, `status`, `created_by`, `created_at`, `updated_by`, `updated_at`
+                    `overall_schools`, `reg_schools`,`reg_mentors`, `schools_with_teams`, `teams`, `ideas`, `students`, `status`, `created_by`, `created_at`, `updated_by`, `updated_at`
                 ]
             )
         } catch (error) {
@@ -995,6 +1001,88 @@ export default class DashboardController extends BaseController {
                 unisolve_db.mentor_topic_progress
             GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE'
         group by organization_id having cou>=8) as final`,{ type: QueryTypes.SELECT })
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getschoolRegCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            const mentorCount = await db.query(`SELECT 
+            COUNT(DISTINCT mn.organization_code) AS RegSchools
+        FROM
+            organizations AS og
+                LEFT JOIN
+            mentors AS mn ON og.organization_code = mn.organization_code
+        WHERE
+            og.status = 'ACTIVE';`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res,mentorCount,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getSchoolteamCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const { organization_code } = req.query
+            if (!organization_code) {
+                throw badRequest(speeches.ORG_CODE_REQUIRED);
+            }
+            result = await db.query(`SELECT 
+            count(*) as teamCount
+        FROM
+            teams
+                JOIN
+            mentors ON teams.mentor_id = mentors.mentor_id
+        WHERE
+            organization_code = ${organization_code};`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getSchoolStudentCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const { organization_code } = req.query
+            if (!organization_code) {
+                throw badRequest(speeches.ORG_CODE_REQUIRED);
+            }
+            result = await db.query(`SELECT 
+            COUNT(*) AS student_count
+        FROM
+            students
+                JOIN
+            teams ON students.team_id = teams.team_id
+                JOIN
+            mentors ON teams.mentor_id = mentors.mentor_id
+        WHERE
+            organization_code = ${organization_code};`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getSchoolideaCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const { organization_code } = req.query
+            if (!organization_code) {
+                throw badRequest(speeches.ORG_CODE_REQUIRED);
+            }
+            result = await db.query(`SELECT 
+            COUNT(*) AS idea_count
+        FROM
+            challenge_responses
+                JOIN
+            teams ON challenge_responses.team_id = teams.team_id
+                JOIN
+            mentors ON teams.mentor_id = mentors.mentor_id
+               where organization_code = ${organization_code} && challenge_responses.status = 'SUBMITTED';`,{ type: QueryTypes.SELECT });
             res.status(200).send(dispatcher(res,result,'done'))
         }
         catch(err){
