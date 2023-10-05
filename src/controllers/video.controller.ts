@@ -202,7 +202,7 @@ export default class VideoController extends BaseController {
     protected async formatOneRowProperly(req:Request,res:Response,data:any){
         let dataModified = JSON.parse(JSON.stringify(data));
         const newVideoRow =   dataModified
-        let user_id = res.locals.user_id;
+        let user_id = res.locals.user_id || res.locals.organization_id || res.locals.id;
         if (!user_id) {
             throw unauthorized(speeches.UNAUTHORIZED_ACCESS)
         }
