@@ -1295,6 +1295,14 @@ export default class ReportController extends BaseController {
             if(district){
                 wherefilter = `&& og.district= '${district}'`;
             }
+            const Regschool = await db.query(`SELECT 
+            og.district, COUNT(DISTINCT mn.organization_code) AS totalRegSchools
+        FROM
+            organizations AS og
+                LEFT JOIN
+            mentors AS mn ON og.organization_code = mn.organization_code
+            WHERE og.status='ACTIVE' ${wherefilter}
+        GROUP BY og.district;`, { type: QueryTypes.SELECT });
             const summary = await db.query(`SELECT 
             og.district, COUNT(mn.mentor_id) AS totalReg
         FROM
@@ -1365,6 +1373,7 @@ export default class ReportController extends BaseController {
             GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE' ${wherefilter}
         group by organization_id having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
+            data['Regschool'] = Regschool;
             data['teamCount'] = teamCount;
             data['studentCountDetails'] = studentCountDetails;
             data['courseCompleted'] = courseCompleted;

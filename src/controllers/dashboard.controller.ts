@@ -23,7 +23,7 @@ import StudentService from '../services/students.service';
 import { user } from '../models/user.model';
 import { object } from 'joi';
 import {baseConfig} from "../configs/base.config";
-
+import { badRequest } from 'boom';
 
 export default class DashboardController extends BaseController {
     model = ""; ///this u will override in every function in this controller ...!!!
@@ -76,6 +76,11 @@ export default class DashboardController extends BaseController {
         this.router.get(`${this.path}/schoolCount`,this.getSchoolCount.bind(this));
         this.router.get(`${this.path}/mentorCourseCount`,this.getmentorCourseCount.bind(this));
         this.router.get(`${this.path}/schoolRegCount`,this.getschoolRegCount.bind(this));
+
+        ///school dashboard 
+        this.router.get(`${this.path}/SchoolteamCount`,this.getSchoolteamCount.bind(this));
+        this.router.get(`${this.path}/SchoolStudentCount`,this.getSchoolStudentCount.bind(this));
+        this.router.get(`${this.path}/SchoolideaCount`,this.getSchoolideaCount.bind(this));
 
         super.initializeRoutes();
     }
@@ -1013,6 +1018,72 @@ export default class DashboardController extends BaseController {
         WHERE
             og.status = 'ACTIVE';`,{ type: QueryTypes.SELECT });
             res.status(200).send(dispatcher(res,mentorCount,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getSchoolteamCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const { organization_code } = req.query
+            if (!organization_code) {
+                throw badRequest(speeches.ORG_CODE_REQUIRED);
+            }
+            result = await db.query(`SELECT 
+            count(*) as teamCount
+        FROM
+            teams
+                JOIN
+            mentors ON teams.mentor_id = mentors.mentor_id
+        WHERE
+            organization_code = ${organization_code};`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getSchoolStudentCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const { organization_code } = req.query
+            if (!organization_code) {
+                throw badRequest(speeches.ORG_CODE_REQUIRED);
+            }
+            result = await db.query(`SELECT 
+            COUNT(*) AS student_count
+        FROM
+            students
+                JOIN
+            teams ON students.team_id = teams.team_id
+                JOIN
+            mentors ON teams.mentor_id = mentors.mentor_id
+        WHERE
+            organization_code = ${organization_code};`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res,result,'done'))
+        }
+        catch(err){
+            next(err)
+        }
+    }
+    protected async getSchoolideaCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try{
+            let result :any = {};
+            const { organization_code } = req.query
+            if (!organization_code) {
+                throw badRequest(speeches.ORG_CODE_REQUIRED);
+            }
+            result = await db.query(`SELECT 
+            COUNT(*) AS idea_count
+        FROM
+            challenge_responses
+                JOIN
+            teams ON challenge_responses.team_id = teams.team_id
+                JOIN
+            mentors ON teams.mentor_id = mentors.mentor_id
+               where organization_code = ${organization_code} && challenge_responses.status = 'SUBMITTED';`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res,result,'done'))
         }
         catch(err){
             next(err)
