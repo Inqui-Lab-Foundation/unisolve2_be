@@ -351,6 +351,7 @@ export default class MentorController extends BaseController {
         //     { where: { user_id: result.dataValues.user_id } }
         // );
         const data = result.dataValues;
+        const otp = await axios.get(`${process.env.MOBILE_SMS_URl}${req.body.mobile}&template_id=2`);
         return res.status(201).send(dispatcher(res, data, 'success', speeches.USER_REGISTERED_SUCCESSFULLY, 201));
     }
 

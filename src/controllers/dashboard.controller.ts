@@ -965,8 +965,8 @@ export default class DashboardController extends BaseController {
                 INNER JOIN
             students AS st ON st.team_id = t.team_id
             WHERE og.status='ACTIVE';`,{ type: QueryTypes.SELECT });
-            result['studentMale'] = Object.values(student[0])[0].toString();
-            result['studentFemale'] = Object.values(student[0])[1].toString();
+            result['studentMale'] = Object.values(student[0])[0] !== null ? Object.values(student[0])[0].toString() : 0;
+            result['studentFemale'] = Object.values(student[0])[1] !== null ? Object.values(student[0])[1].toString() : 0;
             res.status(200).send(dispatcher(res,result,'done'))
         }
         catch(err){
