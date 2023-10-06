@@ -808,7 +808,7 @@ export default class authService {
                 passwordNeedToBeUpdated['otp'] = requestBody.organization_code;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
-                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile,2);
+                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile,3);
                 if (passwordNeedToBeUpdated instanceof Error) {
                     throw passwordNeedToBeUpdated;
                 }
