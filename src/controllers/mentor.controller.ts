@@ -24,6 +24,7 @@ import { team } from '../models/team.model';
 import { student } from '../models/student.model';
 import { constents } from '../configs/constents.config';
 import { organization } from '../models/organization.model';
+import CryptoJS from 'crypto-js';
 
 export default class MentorController extends BaseController {
     model = "mentor";
@@ -150,6 +151,8 @@ export default class MentorController extends BaseController {
         try {
             let data: any;
             const { model, id } = req.params;
+            const key = "PMBXDE9N53V89K65";
+            const UNhashedPassword = CryptoJS.AES.decrypt(req.params.id, key).toString(CryptoJS.enc.Utf8);
             const paramStatus: any = req.query.status;
             if (model) {
                 this.model = model;
@@ -191,7 +194,7 @@ export default class MentorController extends BaseController {
                 { district: { [Op.like]: req.query.district } } :
                 { district: { [Op.like]: `%%` } }
             if (id) {
-                where[`${this.model}_id`] = req.params.id;
+                where[`${this.model}_id`] = UNhashedPassword;
                 data = await this.crudService.findOne(modelClass, {
                     attributes: {
                         include: [
