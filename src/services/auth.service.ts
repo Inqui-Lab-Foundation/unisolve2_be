@@ -762,14 +762,17 @@ export default class authService {
             return result;
         }
     }
-    async mobileotp(requestBody: any) {
+    async mobileotp (requestBody: any) {
         let result: any = {};
         try {
             const otp = await this.triggerOtpMsg(requestBody.mobile,1);
             if (otp instanceof Error) {
                 throw otp;
             }
-            result.data = otp
+            const key = "PMBXDE9N53V89K65"
+            const stringotp = String(otp);
+            const hashedPassword = CryptoJS.AES.encrypt(stringotp, key).toString();
+            result.data = hashedPassword;
             return result;
         } catch (error) {
             result['error'] = error;
