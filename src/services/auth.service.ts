@@ -792,8 +792,8 @@ export default class authService {
         let passwordNeedToBeUpdated: any = {};
         try {
             if (!otp) {
-                mentor_res = await this.crudService.findOne(mentor, {
-                    where: { [Op.and]: [{ organization_code: requestBody.organization_code }, { mentor_id }] }
+                mentor_res = await this.crudService.findOne(user, {
+                    where: { username: requestBody.username }
                 });
             } else {
                 mentor_res = await this.crudService.findOne(user, {
@@ -808,7 +808,7 @@ export default class authService {
                 where: { user_id: mentor_res.dataValues.user_id }
             });
             if (!otp) {
-                passwordNeedToBeUpdated['otp'] = requestBody.organization_code;
+                passwordNeedToBeUpdated['otp'] = requestBody.username;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
                 passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile,3);
