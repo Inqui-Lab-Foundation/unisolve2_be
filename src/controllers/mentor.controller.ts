@@ -24,6 +24,7 @@ import { team } from '../models/team.model';
 import { student } from '../models/student.model';
 import { constents } from '../configs/constents.config';
 import { organization } from '../models/organization.model';
+import CryptoJS from 'crypto-js';
 
 export default class MentorController extends BaseController {
     model = "mentor";
@@ -150,6 +151,8 @@ export default class MentorController extends BaseController {
         try {
             let data: any;
             const { model, id } = req.params;
+            const key = "PMBXDE9N53V89K65";
+            const UNhashedPassword = CryptoJS.AES.decrypt(req.params.id, key).toString(CryptoJS.enc.Utf8);
             const paramStatus: any = req.query.status;
             if (model) {
                 this.model = model;
@@ -191,7 +194,7 @@ export default class MentorController extends BaseController {
                 { district: { [Op.like]: req.query.district } } :
                 { district: { [Op.like]: `%%` } }
             if (id) {
-                where[`${this.model}_id`] = req.params.id;
+                where[`${this.model}_id`] = UNhashedPassword;
                 data = await this.crudService.findOne(modelClass, {
                     attributes: {
                         include: [
@@ -594,15 +597,15 @@ export default class MentorController extends BaseController {
     }
     private async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const { mobile, organization_code, otp } = req.body;
+            const { mobile, username, otp } = req.body;
             let otpCheck = typeof otp == 'boolean' && otp == false ? otp : true;
             if (otpCheck) {
                 if (!mobile) {
                     throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
                 }
             } else {
-                if (!organization_code) {
-                    throw badRequest(speeches.ORG_CODE_REQUIRED);
+                if (!username) {
+                    throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
                 }
             }
             const result = await this.authService.mentorResetPassword(req.body);

@@ -762,14 +762,17 @@ export default class authService {
             return result;
         }
     }
-    async mobileotp(requestBody: any) {
+    async mobileotp (requestBody: any) {
         let result: any = {};
         try {
             const otp = await this.triggerOtpMsg(requestBody.mobile,1);
             if (otp instanceof Error) {
                 throw otp;
             }
-            result.data = otp
+            const key = "PMBXDE9N53V89K65"
+            const stringotp = String(otp);
+            const hashedPassword = CryptoJS.AES.encrypt(stringotp, key).toString();
+            result.data = hashedPassword;
             return result;
         } catch (error) {
             result['error'] = error;
@@ -789,8 +792,8 @@ export default class authService {
         let passwordNeedToBeUpdated: any = {};
         try {
             if (!otp) {
-                mentor_res = await this.crudService.findOne(mentor, {
-                    where: { [Op.and]: [{ organization_code: requestBody.organization_code }, { mentor_id }] }
+                mentor_res = await this.crudService.findOne(user, {
+                    where: { username: requestBody.username }
                 });
             } else {
                 mentor_res = await this.crudService.findOne(user, {
@@ -805,7 +808,7 @@ export default class authService {
                 where: { user_id: mentor_res.dataValues.user_id }
             });
             if (!otp) {
-                passwordNeedToBeUpdated['otp'] = requestBody.organization_code;
+                passwordNeedToBeUpdated['otp'] = requestBody.username;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
                 passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile,3);
