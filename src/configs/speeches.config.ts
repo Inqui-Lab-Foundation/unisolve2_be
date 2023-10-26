@@ -25,7 +25,7 @@ export const speeches = {
     UPLOAD_FAILD: "File upload failed",
     MENTOR_EXISTS: "Email ID already exists",
     MENTOR_NOT_EXISTS: "Mentor not found",
-    AWSMESSAGEID: "Service not used, updating organization code as password",
+    AWSMESSAGEID: "Service not used, updating mobile number as password",
     MOBILE_EXISTS: "Mobile Number already exists",
     STUDENT_EXISTS: "Student already exists",
     ADMIN_EXISTS: "Admin already exists",
