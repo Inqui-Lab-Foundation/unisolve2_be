@@ -18,6 +18,8 @@ import { Op, QueryTypes } from 'sequelize';
 import { user } from "../models/user.model";
 import { team } from "../models/team.model";
 import {baseConfig} from "../configs/base.config";
+import SchoolDReportService from "../services/schoolDReort.service";
+import StudentDReportService from "../services/studentDReort.service";
 //import { reflective_quiz_response } from '../models/reflective_quiz_response.model';
 
 export default class ReportController extends BaseController {
@@ -54,6 +56,9 @@ export default class ReportController extends BaseController {
         this.router.get(`${this.path}/mentordetailsreport`, this.getmentorDetailsreport.bind(this));
         this.router.get(`${this.path}/mentordetailstable`, this.getmentorDetailstable.bind(this));
         this.router.get(`${this.path}/studentdetailstable`, this.getstudentDetailstable.bind(this));
+        this.router.get(`${this.path}/refreshSchoolDReport`, this.refreshSchoolDReport.bind(this));
+        this.router.get(`${this.path}/refreshStudentDReport`, this.refreshStudentDReport.bind(this));
+        
         
         // super.initializeRoutes();
     }
@@ -1065,68 +1070,34 @@ export default class ReportController extends BaseController {
                 districtFilter = `'%%'`
                 categoryFilter = `'%%'`
             }
-            const summary = await db.query(`SELECT 
-            og.organization_code AS 'UDISE code',
-            og.organization_name AS 'School Name',
-            og.district,
-            og.category,
-            og.city,
-            og.principal_name AS 'HM Name',
-            og.principal_mobile AS 'HM Contact',
-            mn.full_name AS 'Teacher Name',
-            mn.gender AS 'Teacher Gender',
-            mn.mobile AS 'Teacher Contact',
-            mn.whatapp_mobile AS 'Teacher WhatsApp Contact',
-            t.team_name AS 'Team Name',
-            st.full_name AS 'Student Name',
-            (SELECT 
-                    username
+                const summary = await db.query(`SELECT 
+                    udise_code AS 'UDISE code',
+                    school_name AS 'School Name',
+                    district,
+                    category,
+                    city,
+                    hm_name AS 'HM Name',
+                    hm_contact AS 'HM Contact',
+                    teacher_name AS 'Teacher Name',
+                    teacher_gender AS 'Teacher Gender',
+                    teacher_contact AS 'Teacher Contact',
+                    teacher_whatsapp_contact AS 'Teacher WhatsApp Contact',
+                    team_name AS 'Team Name',
+                    student_name AS 'Student Name',
+                    student_username AS 'Student Username',
+                    Age,
+                    gender,
+                    Grade,
+                    pre_survey_status AS 'Pre Survey Status',
+                    idea_status AS 'Idea Status',
+                    course_status,
+                    post_survey_status AS 'Post Survey Status'
                 FROM
-                    users
+                    student_report
                 WHERE
-                    user_id = st.user_id) AS 'Student Username',
-            st.Age,
-            st.gender,
-            st.Grade,
-            IFNULL((SELECT 
-                            status
-                        FROM
-                            quiz_survey_responses
-                        WHERE
-                            quiz_survey_id = 2
-                                && user_id = st.user_id),
-                    'Not Started') AS 'Pre Survey Status',
-            IFNULL((SELECT 
-                            status
-                        FROM
-                            challenge_responses
-                        WHERE
-                            team_id = st.team_id),
-                    'Not Initiated') AS 'Idea Status',
-            (SELECT 
-                    COUNT(course_topic_id)
-                FROM
-                    user_topic_progress
-                WHERE
-                    user_id = st.user_id) AS course_status,
-            IFNULL((SELECT 
-                            status
-                        FROM
-                            quiz_survey_responses
-                        WHERE
-                            quiz_survey_id = 4
-                                && user_id = st.user_id),
-                    'Not Started') AS 'Post Survey Status'
-        FROM
-            ((((unisolve_db.students AS st)
-            INNER JOIN unisolve_db.teams AS t ON st.team_id = t.team_id)
-            INNER JOIN unisolve_db.mentors AS mn ON t.mentor_id = mn.mentor_id)
-            INNER JOIN unisolve_db.organizations AS og ON mn.organization_code = og.organization_code)
-        WHERE
-            og.status = 'ACTIVE'
-                && og.district like ${districtFilter}
-                && og.category like ${categoryFilter} order by district,mn.full_name,t.team_name,st.full_name;`, { type: QueryTypes.SELECT });
-            data=summary;
+                    status = 'ACTIVE' && district like ${districtFilter} 
+                    && category like ${categoryFilter} order by district,teacher_name,team_name,student_name;`, { type: QueryTypes.SELECT });
+                data=summary;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -1157,125 +1128,34 @@ export default class ReportController extends BaseController {
                 districtFilter = `'%%'`
                 categoryFilter = `'%%'`
             }
-            const summary = await db.query(`SELECT 
-            og.organization_code AS 'UDISE code',
-            og.organization_name AS 'School Name',
-            og.district,
-            og.category,
-            og.city,
-            og.principal_name AS 'HM Name',
-            og.principal_mobile AS 'HM Contact',
-            mn.full_name AS 'Teacher Name',
-            mn.gender AS 'Teacher Gender',
-            mn.mobile AS 'Teacher Contact',
-            mn.whatapp_mobile AS 'Teacher WhatsApp Contact',
-            IFNULL((SELECT 
-                            CASE
-                                    WHEN status = 'ACTIVE' THEN 'Completed'
-                                END
-                        FROM
-                            quiz_survey_responses
-                        WHERE
-                            quiz_survey_id = 1
-                                && user_id = mn.user_id),
-                    'Not Started') AS 'Pre Survey Status',
-            (SELECT 
-                    CASE
-                            WHEN COUNT(mentor_course_topic_id) >= 8 THEN 'Completed'
-                            WHEN COUNT(mentor_course_topic_id) = 0 THEN 'Not Started'
-                            ELSE 'In Progress'
-                        END
-                FROM
-                    mentor_topic_progress
-                WHERE
-                    user_id = mn.user_id) AS 'Course Status',
-            IFNULL((SELECT 
-                            CASE
-                                    WHEN status = 'ACTIVE' THEN 'Completed'
-                                END
-                        FROM
-                            quiz_survey_responses
-                        WHERE
-                            quiz_survey_id = 3
-                                && user_id = mn.user_id),
-                    'Not Started') AS 'Post Survey Status',
-            (SELECT 
-                    COUNT(*)
-                FROM
-                    teams
-                WHERE
-                    mentor_id = mn.mentor_id) AS team_count,
-            (SELECT 
-                    COUNT(*)
-                FROM
-                    teams
-                        JOIN
-                    students ON teams.team_id = students.team_id
-                WHERE
-                    mentor_id = mn.mentor_id) AS student_count,
-            (SELECT 
-                    COUNT(*)
-                FROM
-                    teams
-                        JOIN
-                    students ON teams.team_id = students.team_id
-                        JOIN
-                    quiz_survey_responses ON students.user_id = quiz_survey_responses.user_id and quiz_survey_id = 2
-                WHERE
-                    mentor_id = mn.mentor_id) AS preSur_cmp,
-            (SELECT 
-                    COUNT(*)
-                FROM
-                    (SELECT 
-                        mentor_id, student_id, COUNT(*), students.user_id
-                    FROM
-                        teams
-                    LEFT JOIN students ON teams.team_id = students.team_id
-                    JOIN user_topic_progress ON students.user_id = user_topic_progress.user_id
-                    WHERE
-                        mentor_id = mn.mentor_id
-                    GROUP BY student_id
-                    HAVING COUNT(*) >= 34) AS total) AS countop,
-            (SELECT 
-                    COUNT(*)
-                FROM
-                    (SELECT 
-                        mentor_id, student_id, COUNT(*), students.user_id
-                    FROM
-                        teams
-                    LEFT JOIN students ON teams.team_id = students.team_id
-                    JOIN user_topic_progress ON students.user_id = user_topic_progress.user_id
-                    WHERE
-                        mentor_id = mn.mentor_id
-                    GROUP BY student_id
-                    HAVING COUNT(*) > 0 && COUNT(*) < 34) AS total) AS courseinprogess,
-            (SELECT 
-                    COUNT(*)
-                FROM
-                    teams
-                        JOIN
-                    challenge_responses ON teams.team_id = challenge_responses.team_id
-                WHERE
-                    mentor_id = mn.mentor_id
-                        AND challenge_responses.status = 'SUBMITTED') AS submittedcout,
-            (SELECT 
-                    COUNT(*)
-                FROM
-                    teams
-                        JOIN
-                    challenge_responses ON teams.team_id = challenge_responses.team_id
-                WHERE
-                    mentor_id = mn.mentor_id
-                        AND challenge_responses.status = 'DRAFT') AS draftcout
-        FROM
-            (mentors AS mn)
-                LEFT JOIN
-            organizations AS og ON mn.organization_code = og.organization_code
-        WHERE
-            og.status = 'ACTIVE'
-                && og.district like ${districtFilter}
-                && og.category like ${categoryFilter} order by district;`, { type: QueryTypes.SELECT });
-            data=summary;
+                const summary = await db.query(`SELECT 
+                udise_code AS 'UDISE code',
+                school_name AS 'School Name',
+                district,
+                category,
+                city,
+                hm_name AS 'HM Name',
+                hm_contact AS 'HM Contact',
+                teacher_name AS 'Teacher Name',
+                teacher_gender AS 'Teacher Gender',
+                teacher_contact AS 'Teacher Contact',
+                teacher_whatsapp_contact AS 'Teacher WhatsApp Contact',
+                pre_survey_status AS 'Pre Survey Status',
+                course_status AS 'Course Status',
+                post_survey_status AS 'Post Survey Status',
+                team_count,
+                student_count,
+                preSur_cmp,
+                countop,
+                courseinprogess,
+                submittedcout,
+                draftcout
+            FROM
+                school_report
+            WHERE
+                district LIKE ${districtFilter} && category LIKE ${categoryFilter}
+            ORDER BY district,teacher_name;`,{ type: QueryTypes.SELECT })
+        data=summary;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -1356,7 +1236,7 @@ export default class ReportController extends BaseController {
             FROM
                 unisolve_db.mentor_topic_progress
             GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE' ${wherefilter}
-        group by organization_id having cou<8) as final group by district;`, { type: QueryTypes.SELECT });
+        having cou<8) as final group by district;`, { type: QueryTypes.SELECT });
         const courseCompleted= await db.query(`select district,count(*) as courseCMP from (SELECT 
             district,cou
         FROM
@@ -1371,7 +1251,7 @@ export default class ReportController extends BaseController {
             FROM
                 unisolve_db.mentor_topic_progress
             GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE' ${wherefilter}
-        group by organization_id having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
+        having cou>=8) as final group by district`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
             data['Regschool'] = Regschool;
             data['teamCount'] = teamCount;
@@ -1498,6 +1378,26 @@ export default class ReportController extends BaseController {
             res.status(200).send(dispatcher(res, data, "success"))
         } catch (err) {
             next(err)
+        }
+    }
+    private async refreshSchoolDReport(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const service = new SchoolDReportService()
+            await service.executeSchoolDReport()
+            const result = 'School Report SQL queries executed successfully.'
+            res.status(200).json(dispatcher(res, result, "success"))
+        } catch (err) {
+            next(err);
+        }
+    }
+    private async refreshStudentDReport(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const service = new StudentDReportService()
+            await service.executeStudentDReport()
+            const result = 'Student Report SQL queries executed successfully.'
+            res.status(200).json(dispatcher(res, result, "success"))
+        } catch (err) {
+            next(err);
         }
     }
 }

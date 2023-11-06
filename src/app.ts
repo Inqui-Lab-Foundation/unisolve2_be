@@ -18,6 +18,8 @@ import * as errorHandler from "./middlewares/errorHandler.middleware";
 import { constents } from "./configs/constents.config";
 import { CronManager } from "./jobs/cronManager";
 import DashboardMapStatsJob from "./jobs/dashboardMapStats.jobs";
+import SchoolDReportJob from "./jobs/schoolDReport.jobs";
+import StudentDReportJob from "./jobs/studentDReport.jobs";
 import { translationMiddleware } from "./middlewares/translation.middleware";
 import TranslationService from "./services/translation.service";
 
@@ -94,6 +96,8 @@ export default class App {
     private initializeJobs(): void {
         const cronManager = CronManager.getInstance()
         cronManager.addJob(new DashboardMapStatsJob())
+        cronManager.addJob(new SchoolDReportJob())
+        cronManager.addJob(new StudentDReportJob())
         cronManager.startAll();
     }
 
