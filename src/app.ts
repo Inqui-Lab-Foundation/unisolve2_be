@@ -20,6 +20,7 @@ import { CronManager } from "./jobs/cronManager";
 import DashboardMapStatsJob from "./jobs/dashboardMapStats.jobs";
 import SchoolDReportJob from "./jobs/schoolDReport.jobs";
 import StudentDReportJob from "./jobs/studentDReport.jobs";
+import IdeaReportJob from "./jobs/ideaReport.jobs";
 import { translationMiddleware } from "./middlewares/translation.middleware";
 import TranslationService from "./services/translation.service";
 
@@ -98,6 +99,7 @@ export default class App {
         cronManager.addJob(new DashboardMapStatsJob())
         cronManager.addJob(new SchoolDReportJob())
         cronManager.addJob(new StudentDReportJob())
+        cronManager.addJob(new IdeaReportJob())
         cronManager.startAll();
     }
 
