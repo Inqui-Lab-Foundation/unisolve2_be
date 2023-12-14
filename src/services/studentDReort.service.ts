@@ -3,7 +3,7 @@ import { QueryTypes } from "sequelize";
 import db from "../utils/dbconnection.util";
 export default class StudentDReportService extends BaseService {
     /**
-     * truncates the data in dashboard map stats tables and re entries
+     * truncates the data in student_report tables and re entries
      * @returns Object 
      */
     executeStudentDReport = async () => {
