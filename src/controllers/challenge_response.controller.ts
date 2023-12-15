@@ -339,6 +339,7 @@ export default class ChallengeResponsesController extends BaseController {
                             let havingClausePart: any;
                             let groupByClausePart: any;
                             whereClauseStatusPart['evaluation_status'] = "SELECTEDROUND1";
+                            whereClauseStatusPart['final_result'] = null;
                             if (yetToProcessList) {
                                 if (yetToProcessList && yetToProcessList == 'L2') {
                                     groupByClausePart = [`challenge_response.challenge_response_id`];
