@@ -19,7 +19,9 @@ SELECT
     final_result,
     response
 FROM
-    challenge_responses;`
+    challenge_responses
+    WHERE
+    status = 'SUBMITTED';`
            const teamData = ` 
            UPDATE idea_report AS d
            JOIN
