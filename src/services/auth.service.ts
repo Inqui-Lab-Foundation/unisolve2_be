@@ -1199,7 +1199,7 @@ export default class authService {
         let eval_res: any;
         try {
             eval_res = await this.crudService.findOne(user, {
-                    where: { username: requestBody.username }
+                    where: { username: requestBody.mobile }
                 });
             if (!eval_res) {
                 result['error'] = speeches.USER_NOT_FOUND;
