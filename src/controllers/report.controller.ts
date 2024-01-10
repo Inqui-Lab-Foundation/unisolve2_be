@@ -1888,9 +1888,10 @@ GROUP BY challenge_response_id;`, { type: QueryTypes.SELECT });
             }
             const summary = await db.query(`SELECT 
             org.district,
-            COALESCE((runners + winners),0) AS shortedlisted,
+            COALESCE((runners + winners + notPro),0) AS shortedlisted,
             COALESCE(runners, 0) AS runners,
-            COALESCE(winners, 0) AS winners
+            COALESCE(winners, 0) AS winners,
+            COALESCE(notPro, 0) AS notPro
         FROM
             organizations AS org
                 LEFT JOIN
@@ -1898,10 +1899,13 @@ GROUP BY challenge_response_id;`, { type: QueryTypes.SELECT });
                 district,
                     COUNT(CASE
                         WHEN final_result = '0' THEN 1
-                    END) AS runners,
+                    END) AS notPro,
                     COUNT(CASE
-                        WHEN final_result = '1' or final_result = '2' THEN 1
-                    END) AS winners
+                        WHEN final_result = '1' THEN 1
+                    END) AS winners,
+                    COUNT(CASE
+                        WHEN final_result = '2' THEN 1
+                    END) AS runners
             FROM
                 challenge_responses AS cal
             WHERE
