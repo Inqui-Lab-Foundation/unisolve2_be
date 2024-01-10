@@ -218,10 +218,7 @@ export default class EvaluatorController extends BaseController {
     }
     private async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const { username,mobile} = req.body;
-            if (!username) {
-                throw badRequest(speeches.USER_EMAIL_REQUIRED);
-            }
+            const {mobile} = req.body;
             if (!mobile) {
                 throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
             }
