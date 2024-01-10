@@ -1900,7 +1900,7 @@ GROUP BY challenge_response_id;`, { type: QueryTypes.SELECT });
                         WHEN final_result = '0' THEN 1
                     END) AS runners,
                     COUNT(CASE
-                        WHEN final_result = '1' THEN 1
+                        WHEN final_result = '1' or final_result = '2' THEN 1
                     END) AS winners
             FROM
                 challenge_responses AS cal
