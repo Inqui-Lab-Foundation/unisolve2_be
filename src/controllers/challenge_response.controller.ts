@@ -806,7 +806,12 @@ export default class ChallengeResponsesController extends BaseController {
             if (model) {
                 this.model = model;
             };
-
+            const L2_status = await this.crudService.findOne(evaluator_rating,{
+                where: { challenge_response_id: req.params.id }
+            });
+            if(L2_status){
+                return res.status(400).send(dispatcher(res,null,'error','This idea cannot be rejected because it is evaluated at L2',400));
+            }
             // redirecting status field to evaluater_status field and removing status from the request body;
             req.body['evaluation_status'] = req.body.status;
             delete req.body.status;
