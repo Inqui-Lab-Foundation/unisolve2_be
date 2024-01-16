@@ -19,6 +19,7 @@ export class challenge_response extends Model<InferAttributes<challenge_response
     declare rejected_reasonSecond: String;
     declare final_result: Enumerator;
     declare district: String;
+    declare category: String;
     declare created_by: number;
     declare created_at: Date;
     declare updated_by: number;
@@ -49,6 +50,9 @@ challenge_response.init(
         district: {
             type: DataTypes.STRING,
             allowNull: true,
+        },
+        category: {
+            type: DataTypes.STRING,
         },
         challenge_id: {
             type: DataTypes.INTEGER,
