@@ -54,26 +54,29 @@ FROM
        d.organization_name = s.organization_name,
        d.district = s.district,
        d.category = s.category;`
-          const allstudent =`UPDATE idea_report AS d
-          JOIN
-      (SELECT 
-          GROUP_CONCAT(full_name
-                  SEPARATOR ', ') AS names,
-              team_id
-      FROM
-          students
-      GROUP BY team_id) AS s ON d.team_id = s.team_id 
-  SET 
-      d.students_names = s.names;` 
+           
            const overallS = `UPDATE idea_report AS d
            JOIN
        (SELECT 
-           AVG(overall) AS overall_score, challenge_response_id
+           AVG(overall) AS overall_score,
+               AVG(param_1) AS novelty,
+               AVG(param_3) AS feasibility,
+               AVG(param_4) AS scalability,
+               AVG(param_5) AS sustainability,
+               AVG(param_2) AS useful,
+               COUNT(challenge_response_id) AS eval_count,
+               challenge_response_id
        FROM
            evaluator_ratings
        GROUP BY challenge_response_id) AS s ON d.challenge_response_id = s.challenge_response_id 
    SET 
-       d.overall_score = s.overall_score;`
+       d.overall_score = s.overall_score,
+       d.novelty = s.novelty,
+       d.feasibility = s.feasibility,
+       d.scalability = s.scalability,
+       d.sustainability = s.sustainability,
+       d.useful = s.useful,
+       d.eval_count = s.eval_count;`
            const qualityS = `UPDATE idea_report AS d
            JOIN
        (SELECT 
@@ -94,7 +97,17 @@ FROM
    GROUP BY challenge_response_id) AS s ON d.challenge_response_id = s.challenge_response_id 
 SET 
    d.feasibility_score = s.sum_params;`
-          
+   const allstudent =`UPDATE idea_report AS d
+          JOIN
+      (SELECT 
+          GROUP_CONCAT(full_name
+                  SEPARATOR ', ') AS names,
+              team_id
+      FROM
+          students
+      GROUP BY team_id) AS s ON d.team_id = s.team_id 
+  SET 
+      d.students_names = s.names;`
         try {
           await db.query(removeDtat,{
             type: QueryTypes.RAW,
