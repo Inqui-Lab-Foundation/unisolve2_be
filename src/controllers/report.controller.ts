@@ -1542,7 +1542,13 @@ export default class ReportController extends BaseController {
             overall_score AS 'Overall score',
             quality_score AS 'Quality score',
             feasibility_score AS 'Feasibility score',
-            final_result
+            final_result,
+            novelty,
+            useful,
+            feasibility,
+            scalability,
+            sustainability,
+            eval_count
         FROM
             idea_report
         WHERE
@@ -1591,7 +1597,12 @@ export default class ReportController extends BaseController {
             overall_score AS 'Overall score',
             quality_score AS 'Quality score',
             feasibility_score AS 'Feasibility score',
-            final_result
+            final_result,
+            novelty,
+            useful,
+            feasibility,
+            scalability,
+            sustainability
         FROM
             idea_report
         WHERE
