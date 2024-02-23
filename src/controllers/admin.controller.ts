@@ -157,8 +157,8 @@ export default class AdminController extends BaseController {
             const { district, ctype } = req.query;
             let data
             if (ctype === 'teacher') {
-                data = await db.query(`SELECT DISTINCT
-            full_name, organization_name
+                data = await db.query(`SELECT
+                title,full_name, organization_name
         FROM
             mentors AS m
                 JOIN
@@ -169,7 +169,21 @@ export default class AdminController extends BaseController {
             o.district = '${district}'
                 AND qs.quiz_survey_id = 3;`, { type: QueryTypes.SELECT })
             } else if (ctype === 'studentIdea') {
-                data = 'no found idea'
+                data = await db.query(`SELECT 
+                s.full_name, org.organization_name
+            FROM
+                students AS s
+                    JOIN
+                teams AS t ON s.team_id = t.team_id
+                    JOIN
+                mentors AS m ON t.mentor_id = m.mentor_id
+                    JOIN
+                organizations AS org ON m.organization_code = org.organization_code
+                    JOIN
+                challenge_responses AS cha ON t.team_id = cha.team_id
+            WHERE
+                org.district = '${district}'
+                    AND cha.status = 'SUBMITTED';`, { type: QueryTypes.SELECT })
             } else if (ctype === 'studentCourse') {
                 data = 'no found'
             }
