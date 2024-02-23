@@ -9,6 +9,8 @@ import { user } from '../models/user.model';
 import { admin } from '../models/admin.model';
 import { adminSchema, adminUpdateSchema } from '../validations/admins.validationa';
 import { badRequest, notFound } from 'boom';
+import { QueryTypes } from 'sequelize';
+import db from "../utils/dbconnection.util";
 
 export default class AdminController extends BaseController {
     model = "admin";
@@ -28,6 +30,7 @@ export default class AdminController extends BaseController {
         this.router.post(`${this.path}/login`, this.login.bind(this));
         this.router.get(`${this.path}/logout`, this.logout.bind(this));
         this.router.put(`${this.path}/changePassword`, this.changePassword.bind(this));
+        this.router.get(`${this.path}/Cgetdata`, this.getCgetdata.bind(this))
         super.initializeRoutes();
     }
     protected getData(req: Request, res: Response, next: NextFunction) {
@@ -97,7 +100,7 @@ export default class AdminController extends BaseController {
 
     private async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         let adminDetails: any;
-        if (req.query.eAdmin && req.query.eAdmin == 'true') { req.body['role'] = 'EADMIN' } else if(req.query.report && req.query.report == 'true') { req.body['role'] = 'REPORT' } else{ req.body['role'] = 'ADMIN' }
+        if (req.query.eAdmin && req.query.eAdmin == 'true') { req.body['role'] = 'EADMIN' } else if (req.query.report && req.query.report == 'true') { req.body['role'] = 'REPORT' } else { req.body['role'] = 'ADMIN' }
         const result = await this.authService.login(req.body);
         if (!result) {
             return res.status(404).send(dispatcher(res, result, 'error', speeches.USER_NOT_FOUND));
@@ -149,4 +152,32 @@ export default class AdminController extends BaseController {
     //         return res.status(202).send(dispatcher(res,result.data, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
     //     }
     // }
+    protected async getCgetdata(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const { district, ctype } = req.query;
+            let data
+            if (ctype === 'teacher') {
+                data = await db.query(`SELECT DISTINCT
+            full_name, organization_name
+        FROM
+            mentors AS m
+                JOIN
+            organizations AS o ON m.organization_code = o.organization_code
+                JOIN
+            quiz_survey_responses AS qs ON m.user_id = qs.user_id
+        WHERE
+            o.district = '${district}'
+                AND qs.quiz_survey_id = 3;`, { type: QueryTypes.SELECT })
+            } else if (ctype === 'studentIdea') {
+                data = 'no found idea'
+            } else if (ctype === 'studentCourse') {
+                data = 'no found'
+            }
+
+            return res.status(200).send(dispatcher(res, data, 'updated'));
+        }
+        catch (error) {
+            next(error);
+        }
+    }
 };
