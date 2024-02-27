@@ -185,7 +185,25 @@ export default class AdminController extends BaseController {
                 org.district = '${district}'
                     AND cha.status = 'SUBMITTED';`, { type: QueryTypes.SELECT })
             } else if (ctype === 'studentCourse') {
-                data = 'no found'
+                data = await db.query(`SELECT 
+                st.full_name, og.organization_name
+            FROM
+                students AS st
+                    JOIN
+                teams AS te ON st.team_id = te.team_id
+                    JOIN
+                mentors AS mn ON te.mentor_id = mn.mentor_id
+                    JOIN
+                organizations AS og ON mn.organization_code = og.organization_code
+                    JOIN
+                (SELECT 
+                    user_id, COUNT(*)
+                FROM
+                    user_topic_progress
+                GROUP BY user_id
+                HAVING COUNT(*) >= 34) AS temp ON st.user_id = temp.user_id
+            WHERE
+                og.district = '${district}';`, { type: QueryTypes.SELECT })
             }
 
             return res.status(200).send(dispatcher(res, data, 'updated'));
